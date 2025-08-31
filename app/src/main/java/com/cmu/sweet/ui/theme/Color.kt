@@ -2,21 +2,23 @@ package com.cmu.sweet.ui.theme
 
 import androidx.compose.ui.graphics.Color
 
-// Primary colors
-val Coral = Color(0xFFFF6F61)          // coral / main highlight
-val PastelPink = Color(0xFFFFB6B9)     // soft pink for secondary elements
-val ChocolateBrown = Color(0x566F4E37) // chocolate tone
+// Cores Primárias e Destaques Intensos
+val RichGold = Color(0xFFD4AF37)         // Ouro mais rico e menos vibrante que o amarelo puro (elegante)
+val BurntOrange = Color(0xFFCC5500)       // Laranja queimado/Terracota (para CTAs fortes ou acentos)
+val DeepCaramel = Color(0xFFA67B5B)       // Um tom de camel mais escuro e rico
 
-// Secondary colors
-val Gold = Color(0xFFFFD700)           // for stars / badges
-val PastelYellow = Color(0xFFFFE066)   // soft highlights
-val SoftGreen = Color(0xFF8BC34A)      // positive / success
+// Cores Secundárias e Suporte
+val SoftMustard = Color(0xFFE4C16E)       // Mostarda suave, um amarelo quente
+val PaleButterYellow = Color(0xFFFFFACD)   // Amarelo manteiga muito pálido (para highlights ou fundos suaves)
+val LightCamel = Color(0xFFE1C699)        // Camel claro, ótimo para cartões ou superfícies secundárias
 
-// Backgrounds and neutrals
-val White = Color(0xFFFFFFFF)          // main background
-val Cream = Color(0xFFFFF8F0)          // alternative background / cards
-val LightGray = Color(0xFFB0B0B0)      // secondary text / dividers
+// Fundos e Neutros Essenciais
+val WarmWhite = Color(0xFFFAF0E6)         // Branco com um toque de linho/bege (fundo principal)
+val AlmondMilk = Color(0xFFF0EBE3)        // Um off-white levemente amendoado (fundo alternativo, cartões)
+val TaupeGray = Color(0xFF8B8589)         // Cinza quente com um toque de marrom/lilás (para texto secundário, divisores)
+val DarkChocolate = Color(0xFF5C4033)     // Seu ChocolateBrown, mas com alfa completo e talvez um pouco mais escuro para contraste de texto
 
-// Feedback colors
-val Red = Color(0xFFF44336)            // error / negative
-val Orange = Color(0xFFFF9800)         // warning / neutral
+// Cores de Feedback (Alinhadas com a Paleta)
+val ForestGreen = Color(0xFF556B2F)       // Verde floresta/oliva escuro para sucesso (sofisticado)
+val AmberYellow = Color(0xFFFFBF00)       // Amarelo âmbar para avisos
+val MutedRed = Color(0xFFC04040)         // Vermelho suave/tijolo para erros

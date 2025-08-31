@@ -3,6 +3,7 @@ plugins {
     alias(libs.plugins.kotlin.android)
     alias(libs.plugins.kotlin.compose)
     id("com.google.gms.google-services")
+    id("org.jetbrains.kotlin.kapt")
 }
 
 android {
@@ -29,12 +30,13 @@ android {
         }
     }
     compileOptions {
-        sourceCompatibility = JavaVersion.VERSION_11
-        targetCompatibility = JavaVersion.VERSION_11
+        sourceCompatibility = JavaVersion.VERSION_17
+        targetCompatibility = JavaVersion.VERSION_17
     }
     kotlinOptions {
-        jvmTarget = "11"
+        jvmTarget = "17"
     }
+
     buildFeatures {
         compose = true
     }
@@ -54,6 +56,9 @@ dependencies {
     implementation(libs.androidx.material.icons.extended)
 
 
+    implementation(libs.timber)
+    kapt(libs.androidx.room.compiler)
+
 
     implementation(platform(libs.firebase.bom))
     implementation(libs.firebase.analytics)
@@ -66,7 +71,17 @@ dependencies {
     implementation(libs.play.services.maps)
     implementation(libs.maps.compose)
     implementation(libs.play.services.location)
+    implementation(libs.androidx.webkit)
+    implementation(libs.places)
+    implementation(libs.identity.jvm)
+    implementation(libs.androidx.runtime.livedata)
+    implementation(libs.androidx.ui.text)
+    implementation(libs.androidx.runtime)
+    implementation(libs.androidx.foundation)
+    implementation(libs.androidx.runtime.saveable)
 
+    implementation(libs.androidx.room.ktx)
+    implementation(libs.androidx.room.runtime)
 
     testImplementation(libs.junit)
 
