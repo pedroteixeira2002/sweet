@@ -1,8 +1,7 @@
 package com.cmu.sweet // <<< VERIFY THIS PACKAGE NAME
 
 import android.app.Application
-import com.cmu.sweet.data.auth.AuthManager
-import com.cmu.sweet.data.local.repository.ProfileStore
+import com.cmu.sweet.data.local.repository.UserRepository
 import com.google.android.libraries.places.api.Places
 import com.google.android.libraries.places.api.net.PlacesClient
 import com.google.firebase.auth.FirebaseAuth
@@ -27,14 +26,9 @@ class SweetApplication : Application() {
     }
 
     // Lazy initialization for your managers/stores
-    internal val profileStore: ProfileStore by lazy {
+    internal val userRepository: UserRepository by lazy {
         Timber.d("Initializing ProfileStore...")
-        ProfileStore(firestoreInstance)
-    }
-
-    internal val authManager: AuthManager by lazy {
-        Timber.d("Initializing AuthManager...")
-        AuthManager(firebaseAuthInstance, profileStore)
+        UserRepository(firestoreInstance)
     }
 
     override fun onCreate() {

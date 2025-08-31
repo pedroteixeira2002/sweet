@@ -61,4 +61,22 @@ class UserEntity {
         this.bio = null
         this.createdAt = null
     }
+
+    /**
+     * Fully parameterized constructor including ID.
+     * @param id Unique identifier for the user.
+     * @param name Name of the user.
+     * @param email Email address of the user.
+     * The bio is set to null by default.
+     * The createdAt timestamp is set to null by default and can be set later.
+     * @see UserEntity
+     *
+     */
+    constructor(id: String, name: String, email: String) {
+        this.id = id
+        this.name = name
+        this.email = email
+        this.bio = null
+        this.createdAt = null
+    }
 }

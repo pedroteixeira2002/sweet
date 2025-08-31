@@ -4,8 +4,7 @@ import android.app.Application
 import androidx.lifecycle.AndroidViewModel
 import androidx.lifecycle.viewModelScope
 import com.cmu.sweet.SweetApplication
-import com.cmu.sweet.data.auth.AuthManager
-import com.cmu.sweet.data.local.repository.ProfileStore
+import com.cmu.sweet.data.local.repository.UserRepository
 import com.cmu.sweet.ui.state.ProfileUiState
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.flow.MutableStateFlow
@@ -18,8 +17,7 @@ import timber.log.Timber
 class ProfileViewModel(application: Application) : AndroidViewModel(application) {
 
     private val sweetApp = application as SweetApplication
-    private val userRepository: ProfileStore = sweetApp.profileStore
-    private val authManager: AuthManager = sweetApp.authManager
+    private val userRepository: UserRepository = sweetApp.userRepository
     val _uiState = MutableStateFlow(ProfileUiState())
     val uiState: StateFlow<ProfileUiState> = _uiState.asStateFlow()
 
@@ -31,7 +29,7 @@ class ProfileViewModel(application: Application) : AndroidViewModel(application)
         Timber.Forest.d("loadUserProfile called")
         viewModelScope.launch {
             _uiState.update { it.copy(isLoading = true, errorMessage = null) }
-            val currentFirebaseUser = authManager.getCurrentFirebaseAuthUser()
+            val currentFirebaseUser = userRepository.getCurrentUser()
             if (currentFirebaseUser == null) {
                 Timber.Forest.w("No authenticated user found. Cannot load profile.")
                 _uiState.update {

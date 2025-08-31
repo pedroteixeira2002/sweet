@@ -77,6 +77,15 @@ class EstablishmentRepository(
         return doc.toObject(EstablishmentEntity::class.java)?.also { dao.insert(it) }
     }
 
+    /**
+     * Fetch establishments within a radius from a center point.
+     * Uses bounding box for initial Firestore query, then filters with Haversine formula.
+     * @param centerLat Center latitude
+     * @param centerLng Center longitude
+     * @param radiusMeters Radius in meters
+     * @return List of EstablishmentEntity within the radius
+     *
+     */
     suspend fun fetchNearbyEstablishments(
         centerLat: Double,
         centerLng: Double,
