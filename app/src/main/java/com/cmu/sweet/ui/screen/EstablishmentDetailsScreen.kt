@@ -94,10 +94,6 @@ fun EstablishmentDetailsScreen(
             } else if (uiState.establishment != null) {
                 val establishment = uiState.establishment!!
 
-                // Seção de Fotos
-                item {
-                    PhotosSection(photos = establishment.photos, establishmentName = establishment.name)
-                }
 
                 // Seção de Informações Básicas
                 item {
@@ -111,20 +107,12 @@ fun EstablishmentDetailsScreen(
                     }
                 }
 
-                // Seção de Horário
-                item {
-                    OpeningHoursSection(openingHours = establishment.openingHours)
-                }
-
-                // Seção de Mini-Mapa
+                              // Seção de Mini-Mapa
                 item {
                     MiniMapSection(location = establishment.location, name = establishment.name)
                 }
 
-                // Seção de Avaliações
-                item {
-                    ReviewsSection(reviews = establishment.reviews)
-                }
+
 
                 // Espaço no final
                 item { Spacer(Modifier.height(16.dp)) }
@@ -187,10 +175,7 @@ fun InfoSection(establishment: EstablishmentDetails) {
         Spacer(Modifier.height(8.dp))
 
         InfoRow(icon = Icons.Filled.LocationOn, text = establishment.address)
-        establishment.phoneNumber?.let {
-            Spacer(Modifier.height(4.dp))
-            InfoRow(icon = Icons.Filled.Phone, text = it, isClickable = true, onClick = { /* Abrir discador */ })
-        }
+
     }
 }
 
@@ -279,16 +264,7 @@ fun ReviewCard(review: ReviewUiModel) {
     ) {
         Column(Modifier.padding(12.dp)) {
             Row(verticalAlignment = Alignment.CenterVertically) {
-                AsyncImage(
-                    model = review.userAvatarUrl ?: R.drawable.ic_launcher_background, // Placeholder para avatar
-                    contentDescription = "Avatar de ${review.userName}",
-                    contentScale = ContentScale.Crop,
-                    modifier = Modifier
-                        .size(40.dp)
-                        .clip(CircleShape)
-                        .background(MaterialTheme.colorScheme.surfaceVariant)
-                )
-                Spacer(Modifier.width(8.dp))
+                                Spacer(Modifier.width(8.dp))
                 Column {
                     Text(review.userName, style = MaterialTheme.typography.titleSmall, fontWeight = FontWeight.SemiBold)
                     Text(review.date, style = MaterialTheme.typography.bodySmall, color = MaterialTheme.colorScheme.onSurfaceVariant)

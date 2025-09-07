@@ -115,11 +115,10 @@ fun AppNavGraph(startDestination: String = Screen.Splash.route) {
             )
         }
         composable(
-            route = "details/{establishmentId}",
+            route = "establishmentDetails/{establishmentId}",
             arguments = listOf(navArgument("establishmentId") { type = NavType.StringType })
         ) { navBackStackEntry ->
 
-            // Obtém o ViewModel usando o backStackEntry
             val viewModel: EstablishmentDetailsViewModel = viewModel(
                 viewModelStoreOwner = navBackStackEntry
             )
@@ -143,7 +142,7 @@ fun AppNavGraph(startDestination: String = Screen.Splash.route) {
             })
         ) { backStackEntry ->
             val establishmentId = backStackEntry.arguments?.getString("establishmentId")
-            AddReviewScreen(navController = navController, establishmentId = establishmentId)
+            AddReviewScreen(navController = navController , establishmentId ="40tmGYETnTMtuXTHfVHj")
         }
         composable(
             route = Screen.EditProfile.routeWithArgs,

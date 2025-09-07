@@ -3,15 +3,12 @@ package com.cmu.sweet.view_model
 import android.Manifest
 import android.annotation.SuppressLint
 import android.app.Application
-import android.content.Context
 import android.content.pm.PackageManager
 import androidx.core.content.ContextCompat
 import androidx.lifecycle.AndroidViewModel
-import androidx.lifecycle.ViewModel
-import androidx.lifecycle.ViewModelProvider
 import androidx.lifecycle.viewModelScope
-import com.cmu.sweet.data.local.repository.EstablishmentRepository
-import com.cmu.sweet.data.local.repository.SweetDatabase
+import com.cmu.sweet.data.local.SweetDatabase
+import com.cmu.sweet.data.repository.EstablishmentRepository
 import com.cmu.sweet.ui.components.fetchAddressSuggestions
 import com.cmu.sweet.ui.components.fetchPlaceCoordinates
 import com.cmu.sweet.ui.state.EstablishmentHomeUiState
@@ -21,6 +18,7 @@ import com.cmu.sweet.utils.haversineDistance
 import com.google.android.gms.location.FusedLocationProviderClient
 import com.google.android.gms.location.LocationServices
 import com.google.android.gms.maps.model.LatLng
+import com.google.android.libraries.places.api.Places
 import com.google.android.libraries.places.api.model.AutocompletePrediction
 import com.google.firebase.firestore.FirebaseFirestore
 import kotlinx.coroutines.flow.MutableStateFlow
@@ -34,12 +32,15 @@ class HomeViewModel(application: Application) : AndroidViewModel(application) {
 
     private val firestore = FirebaseFirestore.getInstance()
     private val dao = SweetDatabase.getInstance(application).establishmentDao()
-    private val repository = EstablishmentRepository(dao, firestore)
+    private val repository = EstablishmentRepository(firestore, dao)
     private val _uiState = MutableStateFlow(HomeUiState())
     val uiState: StateFlow<HomeUiState> = _uiState
     private val appContext = application.applicationContext
     private val fusedLocationClient: FusedLocationProviderClient =
         LocationServices.getFusedLocationProviderClient(appContext)
+    private val placesClient by lazy {
+        Places.createClient(appContext)
+    }
 
     init {
         checkInitialLocationPermission()
@@ -139,9 +140,6 @@ class HomeViewModel(application: Application) : AndroidViewModel(application) {
                             locationError = "Não foi possível obter a última localização conhecida."
                         )
                     }
-                    // TODO: Tentar getCurrentLocation se lastLocation for null
-                    // val currentLocation = fusedLocationClient.getCurrentLocation(Priority.PRIORITY_HIGH_ACCURACY, null).await()
-                    // ... (tratar currentLocation)
                 }
             } catch (e: SecurityException) {
                 Timber.tag("HomeViewModel").e(e, "SecurityException ao buscar localização")
@@ -188,63 +186,6 @@ class HomeViewModel(application: Application) : AndroidViewModel(application) {
         _uiState.update { it.copy(locationError = null) }
     }
 
-    fun loadEstablishmentsNearby(center: LatLng, radiusMeters: Double) {
-        viewModelScope.launch {
-            _uiState.update { it.copy(isLoadingEstablishments = true, establishments = emptyList()) }
-            try {
-                // Fetch from repository
-                val nearbyEntities = repository.fetchNearbyEstablishments(
-                    center.latitude,
-                    center.longitude,
-                    radiusMeters
-                )
-
-                // Log results from repository
-                Timber.d("Fetched ${nearbyEntities.size} establishments from repository")
-
-                // Map to UI model with distance
-                val uiModels = nearbyEntities.map { entity ->
-                    val distance = haversineDistance(
-                        center.latitude,
-                        center.longitude,
-                        entity.latitude,
-                        entity.longitude
-                    )
-                    Timber.d("Entity: ${entity.name} | LatLng=(${entity.latitude}, ${entity.longitude}) | Distance=${"%.2f".format(distance)} m")
-
-                    EstablishmentHomeUiState(
-                        id = entity.id,
-                        name = entity.name,
-                        address = entity.address,
-                        latitude = entity.latitude,
-                        longitude = entity.longitude,
-                        distance = distance,
-                        type = entity.type,
-                        description = entity.description,
-                        addedBy = entity.addedBy
-                    )
-                }
-                    // filter by radius just in case repository didn’t
-                    .filter { it.distance!! <= radiusMeters }
-                    .sortedBy { it.distance }
-
-                Timber.d("After filtering: ${uiModels.size} establishments within ${radiusMeters}m")
-
-                // Update state
-                _uiState.update { it.copy(establishments = uiModels, isLoadingEstablishments = false) }
-
-            } catch (e: Exception) {
-                Timber.e(e, "Error loading establishments nearby")
-                _uiState.update {
-                    it.copy(
-                        isLoadingEstablishments = false,
-                        locationError = "Erro ao carregar estabelecimentos: ${e.message}"
-                    )
-                }
-            }
-        }
-    }
-
     fun selectSuggestion(
         prediction: AutocompletePrediction,
         onLocationFetched: (LatLng) -> Unit
@@ -258,23 +199,103 @@ class HomeViewModel(application: Application) : AndroidViewModel(application) {
                 placeCoordinates?.let { latLng ->
                     onLocationFetched(latLng)
                 }
+                _uiState.update { it.copy(suggestions = emptyList()) }
+
             } catch (e: Exception) {
                 _uiState.update { it.copy(locationError = "Erro ao obter coordenadas: ${e.message}") }
             }
         }
     }
 
-    class HomeViewModelFactory(
-        private val application: Application,
-    ) : ViewModelProvider.Factory {
+    fun searchAddress(query: String) {
+        if (query.isBlank()) return
 
-        @Suppress("UNCHECKED_CAST")
-        override fun <T : ViewModel> create(modelClass: Class<T>): T {
-            if (modelClass.isAssignableFrom(HomeViewModel::class.java)) {
-                return HomeViewModel(application) as T
+        viewModelScope.launch {
+            try {
+                val suggestions = fetchAddressSuggestions(placesClient, query)
+                _uiState.update { it.copy(suggestions = suggestions) }
+            } catch (e: Exception) {
+                _uiState.update { it.copy(searchError = e.message) }
             }
-            throw IllegalArgumentException("Unknown ViewModel class: " + modelClass.name)
         }
+    }
+
+    fun updateSuggestions(predictions: List<AutocompletePrediction>) {
+        _uiState.update { it.copy(suggestions = predictions) }
+    }
+
+    fun loadEstablishmentsNearby(center: LatLng, radiusMeters: Double) {
+        viewModelScope.launch {
+            _uiState.update {
+                it.copy(
+                    isLoadingEstablishments = true,
+                    establishments = emptyList()
+                )
+            }
+            try {
+                val nearbyEntities = repository.fetchNearbyEstablishments(
+                    center.latitude,
+                    center.longitude,
+                    radiusMeters
+                )
+
+                Timber.d("Fetched ${nearbyEntities.size} establishments from Firestore")
+
+                // Map to UI state with distance
+                val uiModels = nearbyEntities.map { establishment ->
+                    val distance = haversineDistance(
+                        center.latitude,
+                        center.longitude,
+                        establishment.latitude,
+                        establishment.longitude
+                    )
+                    Timber.d(
+                        "Entity: ${establishment.name} | LatLng=(${establishment.latitude}, ${establishment.longitude}) | Distance=${
+                            "%.2f".format(
+                                distance
+                            )
+                        } m"
+                    )
+
+                    EstablishmentHomeUiState(
+                        id = establishment.id,
+                        name = establishment.name,
+                        address = establishment.address,
+                        latitude = establishment.latitude,
+                        longitude = establishment.longitude,
+                        distance = distance,
+                        type = establishment.type,
+                        description = establishment.description,
+                        addedBy = establishment.addedBy
+                    )
+                }
+                    .filter { it.distance!! <= radiusMeters } // filter by radius
+                    .sortedBy { it.distance } // sort closest first
+
+                Timber.d("After filtering: ${uiModels.size} establishments within ${radiusMeters}m")
+
+                _uiState.update {
+                    it.copy(
+                        establishments = uiModels,
+                        isLoadingEstablishments = false,
+                        locationError = null
+                    )
+                }
+
+            } catch (e: Exception) {
+                Timber.e(e, "Error loading establishments nearby")
+                _uiState.update {
+                    it.copy(
+                        isLoadingEstablishments = false,
+                        locationError = "Erro ao carregar estabelecimentos: ${e.message}"
+                    )
+                }
+            }
+        }
+    }
+
+    fun clearSuggestions() {
+        _uiState.update { it.copy(suggestions = emptyList(), isDropdownExpanded = false) }
     }
 
 

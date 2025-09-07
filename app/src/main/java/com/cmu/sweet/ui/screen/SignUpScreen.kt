@@ -13,7 +13,7 @@ import androidx.compose.ui.text.input.PasswordVisualTransformation
 import androidx.compose.ui.unit.dp
 import androidx.lifecycle.ViewModelProvider
 import androidx.lifecycle.viewmodel.compose.viewModel
-import com.cmu.sweet.view_model.SignUpViewModel
+import com.cmu.sweet.view_model.AuthViewModel
 
 @Composable
 fun SignUpScreen(
@@ -21,7 +21,7 @@ fun SignUpScreen(
     onLoginClick: () -> Unit
 ) {
     val application = LocalContext.current.applicationContext as Application
-    val viewModel: SignUpViewModel = viewModel(
+    val viewModel: AuthViewModel = viewModel(
         factory = ViewModelProvider.AndroidViewModelFactory.getInstance(application)
     )
     val state by viewModel.uiState.collectAsState()

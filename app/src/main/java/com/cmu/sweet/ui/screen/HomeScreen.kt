@@ -1,7 +1,6 @@
 package com.cmu.sweet.ui.screen
 
 import android.Manifest
-import android.app.Application
 import android.content.Intent
 import android.content.pm.PackageManager
 import android.net.Uri
@@ -37,9 +36,9 @@ import androidx.compose.ui.unit.dp
 import androidx.core.app.ActivityCompat
 import androidx.core.content.ContextCompat
 import androidx.lifecycle.viewmodel.compose.viewModel
-import com.cmu.sweet.data.local.repository.EstablishmentRepository
-import com.cmu.sweet.data.local.repository.SweetDatabase
-import com.cmu.sweet.ui.components.AddressSearchBar
+import com.cmu.sweet.SweetApplication
+import com.cmu.sweet.data.local.SweetDatabase
+import com.cmu.sweet.data.repository.UserRepository
 import com.cmu.sweet.ui.components.AppBottomNavigationBar
 import com.cmu.sweet.ui.components.EstablishmentCard
 import com.cmu.sweet.ui.components.MiniFabItem
@@ -47,10 +46,13 @@ import com.cmu.sweet.ui.state.HomeUiState
 import com.cmu.sweet.ui.state.LocationPermissionState
 import com.cmu.sweet.ui.navigation.BottomNavItem
 import com.cmu.sweet.view_model.HomeViewModel
+import com.cmu.sweet.view_model.ProfileViewModel
 import com.google.android.gms.maps.CameraUpdateFactory
 import com.google.android.gms.maps.model.CameraPosition
 import com.google.android.gms.maps.model.LatLng
 import com.google.android.libraries.places.api.model.AutocompletePrediction
+import com.google.firebase.auth.FirebaseAuth
+import com.google.firebase.firestore.FirebaseFirestore
 import com.google.maps.android.compose.CameraPositionState
 import com.google.maps.android.compose.GoogleMap
 import com.google.maps.android.compose.MapProperties
@@ -58,7 +60,6 @@ import com.google.maps.android.compose.MapUiSettings
 import com.google.maps.android.compose.Marker
 import com.google.maps.android.compose.rememberCameraPositionState
 import com.google.maps.android.compose.rememberUpdatedMarkerState
-import kotlinx.coroutines.launch
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
@@ -70,8 +71,16 @@ fun HomeScreen(
     onNavigateToLogin: () -> Unit,
     onNavigateToEditProfile: (String) -> Unit
 ) {
-    val context = LocalContext.current
     val activity = LocalActivity.current as? ComponentActivity
+    val context = LocalContext.current
+
+    val userDao = SweetDatabase.getInstance(context).userDao()
+    val establishmentDao = SweetDatabase.getInstance(context).establishmentDao()
+    val firebaseAuth = FirebaseAuth.getInstance()
+    val firestore = FirebaseFirestore.getInstance()
+    val userRepository = UserRepository(firestore, userDao,firebaseAuth)
+    val establishmentRepository = com.cmu.sweet.data.repository.EstablishmentRepository(firestore, establishmentDao)
+
     var currentBottomNavItem by rememberSaveable(stateSaver = BottomNavItem.Saver) {
         mutableStateOf(BottomNavItem.Home)
     }
@@ -238,135 +247,11 @@ fun HomeScreen(
                 )
 
                 BottomNavItem.Profile -> ProfileScreen(
+                    userRepository = userRepository,
+                    establishmentRepository = establishmentRepository,
                     onNavigateToLogin = onNavigateToLogin,
                     onNavigateToEditProfile = onNavigateToEditProfile
                 )
-            }
-        }
-    }
-}
-
-@OptIn(ExperimentalMaterial3Api::class)
-@Composable
-fun HomeSectionContent(
-    homeViewModel: HomeViewModel,
-    cameraPositionState: CameraPositionState,
-    uiState: HomeUiState,
-    onNavigateToDetails: (establishmentId: String) -> Unit,
-    modifier: Modifier = Modifier
-) {
-    val context = LocalContext.current
-    val scaffoldState = rememberBottomSheetScaffoldState()
-    var suggestions by remember { mutableStateOf<List<AutocompletePrediction>>(emptyList()) }
-    var searchRadius by remember { mutableStateOf(1000f) }
-
-
-    BottomSheetScaffold(
-        scaffoldState = scaffoldState,
-        sheetPeekHeight = 64.dp,
-        sheetContent = {
-            Spacer(Modifier.height(8.dp))
-            Column(Modifier.padding(12.dp)) {
-                Text("Estabelecimentos próximos", style = MaterialTheme.typography.titleLarge)
-                Spacer(Modifier.height(8.dp))
-
-                Text("Raio: ${searchRadius.toInt()} metros")
-                Slider(
-                    value = searchRadius,
-                    onValueChange = { searchRadius = it },
-                    valueRange = 250f..20000f,
-                    steps = 20
-                )
-
-                Spacer(Modifier.height(8.dp))
-
-                if (uiState.isLoadingEstablishments && uiState.establishments.isEmpty()) {
-                    Box(Modifier.fillMaxWidth(), contentAlignment = Alignment.Center) {
-                        CircularProgressIndicator()
-                    }
-                } else if (uiState.establishments.isEmpty()) {
-                    Box(Modifier.fillMaxWidth(), contentAlignment = Alignment.Center) {
-                        Text("Nenhum estabelecimento encontrado por perto.")
-                    }
-                } else {
-                    LazyColumn {
-                        items(uiState.establishments, key = { it.id }) { establishment ->
-                            EstablishmentCard(
-                                establishment = establishment,
-                                onClick = { onNavigateToDetails(establishment.id) }
-                            )
-                        }
-                    }
-                }
-            }
-        },
-        modifier = modifier.fillMaxSize()
-    ) { innerPadding ->
-        Box(Modifier.padding(innerPadding)) {
-            GoogleMap(
-                modifier = Modifier.fillMaxSize(),
-                cameraPositionState = cameraPositionState,
-                uiSettings = MapUiSettings(zoomControlsEnabled = true),
-                onMapLoaded = { homeViewModel.onMapLoaded() },
-                properties = MapProperties(
-                    isMyLocationEnabled = uiState.locationPermissionState == LocationPermissionState.GRANTED
-                )
-            ) {
-                uiState.establishments.forEach { establishment ->
-                    Marker(
-                        state = rememberUpdatedMarkerState(position = establishment.location),
-                        title = establishment.name,
-                        snippet = "Rating: ${establishment.rating} - ${establishment.distance}",
-                        onInfoWindowClick = { onNavigateToDetails(establishment.id) }
-                    )
-                }
-            }
-
-            Column(
-                modifier = Modifier
-                    .align(Alignment.TopCenter)
-                    .padding(top = 24.dp, start = 16.dp, end = 16.dp)
-                    .fillMaxWidth(0.95f)
-            ) {
-
-                DropdownMenu(
-                    expanded = suggestions.isNotEmpty(),
-                    onDismissRequest = { suggestions = emptyList() },
-                    modifier = Modifier.fillMaxWidth()
-                ) {
-                    suggestions.forEach { prediction ->
-                        DropdownMenuItem(
-                            text = { Text(prediction.getFullText(null).toString()) },
-                            onClick = {
-                                suggestions = emptyList()
-                                homeViewModel.selectSuggestion(prediction) { latLng: LatLng ->
-                                    cameraPositionState.move(
-                                        CameraUpdateFactory.newLatLngZoom(latLng, 15f)
-                                    )
-                                    homeViewModel.loadEstablishmentsNearby(
-                                        center = latLng,
-                                        radiusMeters = searchRadius.toDouble()
-                                    )
-                                }
-                            }
-                        )
-                    }
-                }
-            }
-
-            if (uiState.isLoadingLocation) {
-                CircularProgressIndicator(Modifier.align(Alignment.Center))
-            }
-
-            uiState.locationError?.let { error ->
-                Snackbar(
-                    modifier = Modifier
-                        .align(Alignment.BottomCenter)
-                        .padding(8.dp),
-                    action = {
-                        Button(onClick = { homeViewModel.clearLocationError() }) { Text("OK") }
-                    }
-                ) { Text(error) }
             }
         }
     }

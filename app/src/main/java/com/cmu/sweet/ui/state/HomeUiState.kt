@@ -1,6 +1,7 @@
 package com.cmu.sweet.ui.state
 
 import com.google.android.gms.maps.model.LatLng
+import com.google.android.libraries.places.api.model.AutocompletePrediction
 
 /**
  * Estado da permissão de localização
@@ -48,8 +49,11 @@ data class HomeUiState(
     val showPermissionRationaleDialog: Boolean = false,
     val showPermanentlyDeniedDialog: Boolean = false,
     val searchText: String = "",
-    val suggestions: List<String> = emptyList(),
+    var searchError: String? = null,
+    val suggestions: List<AutocompletePrediction> = emptyList(),
     val selectedAddress: String? = null,
     val selectedLocation: LatLng? = null,
     val searchRadius: Float = 1000f,
-)
+    val isDropdownExpanded: Boolean = false,
+
+    )

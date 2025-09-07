@@ -8,30 +8,32 @@ import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.filled.ExitToApp
 import androidx.compose.material.icons.filled.Edit
 import androidx.compose.material3.*
-import androidx.compose.runtime.Composable
-import androidx.compose.runtime.collectAsState
-import androidx.compose.runtime.getValue
-import androidx.compose.runtime.mutableStateOf
-import androidx.compose.runtime.remember
-import androidx.compose.runtime.setValue
+import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import androidx.lifecycle.viewmodel.compose.viewModel
+import com.cmu.sweet.data.local.entities.Establishment
+import com.cmu.sweet.data.local.entities.Review
+import com.cmu.sweet.data.local.entities.User
+import com.cmu.sweet.data.repository.EstablishmentRepository
+import com.cmu.sweet.data.repository.UserRepository
 import com.cmu.sweet.view_model.ProfileViewModel
-import com.google.android.libraries.places.api.model.Place
-import com.google.android.libraries.places.api.model.Review
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
 fun ProfileScreen(
     modifier: Modifier = Modifier,
-    profileViewModel: ProfileViewModel = viewModel(),
+    userRepository: UserRepository,
+    establishmentRepository: EstablishmentRepository,
     onNavigateToLogin: () -> Unit,
     onNavigateToEditProfile: (userId: String) -> Unit
 ) {
+    val context = LocalContext.current.applicationContext as Application
+    val factory = ProfileViewModel.ProfileViewModelFactory(userRepository, context, establishmentRepository)
+    val profileViewModel: ProfileViewModel = viewModel(factory = factory)
     val uiState by profileViewModel.uiState.collectAsState()
     var showLogoutDialog by remember { mutableStateOf(false) }
 
@@ -55,32 +57,30 @@ fun ProfileScreen(
                 .padding(paddingValues)
                 .fillMaxSize()
         ) {
-            if (uiState.isLoading && uiState.user == null) {
-                CircularProgressIndicator(modifier = Modifier.align(Alignment.Center))
-            } else if (uiState.errorMessage != null) {
-                Column(
-                    modifier = Modifier
-                        .fillMaxSize()
-                        .padding(16.dp),
-                    horizontalAlignment = Alignment.CenterHorizontally,
-                    verticalArrangement = Arrangement.Center
-                ) {
-                    Text(
-                        "Oops! ${uiState.errorMessage}",
-                        color = MaterialTheme.colorScheme.error,
-                        style = MaterialTheme.typography.bodyLarge
-                    )
-                    Spacer(Modifier.height(8.dp))
-                    Button(onClick = { profileViewModel.loadUserProfile() }) {
-                        Text("Tentar Novamente")
+            when {
+                uiState.isLoading && uiState.user == null -> CircularProgressIndicator(modifier = Modifier.align(Alignment.Center))
+                uiState.errorMessage != null -> {
+                    Column(
+                        modifier = Modifier
+                            .fillMaxSize()
+                            .padding(16.dp),
+                        horizontalAlignment = Alignment.CenterHorizontally,
+                        verticalArrangement = Arrangement.Center
+                    ) {
+                        Text("Oops! ${uiState.errorMessage}", color = MaterialTheme.colorScheme.error)
+                        Spacer(Modifier.height(8.dp))
+                        Button(onClick = { profileViewModel.loadUserProfile() }) {
+                            Text("Tentar Novamente")
+                        }
                     }
                 }
-            } else {
-                uiState.user?.let { user ->
+                uiState.user != null -> {
                     ProfileContent(
-                        user = user,
+                        user = uiState.user!!,
                         reviewsCount = uiState.reviewsCount,
                         establishmentsAddedCount = uiState.establishmentsAddedCount,
+                        reviews = uiState.reviews,
+                        establishments = uiState.places,
                         onLogoutClicked = { showLogoutDialog = true }
                     )
                 }
@@ -101,19 +101,13 @@ fun ProfileScreen(
                 TextButton(
                     onClick = {
                         showLogoutDialog = false
-                        profileViewModel.attemptLogout {
-                            onNavigateToLogin()
-                        }
+                        profileViewModel.attemptLogout { onNavigateToLogin() }
                     },
                     enabled = !uiState.isLoggingOut
-                ) {
-                    Text("Sair")
-                }
+                ) { Text("Sair") }
             },
             dismissButton = {
-                TextButton(onClick = { showLogoutDialog = false }) {
-                    Text("Cancelar")
-                }
+                TextButton(onClick = { showLogoutDialog = false }) { Text("Cancelar") }
             }
         )
     }
@@ -125,8 +119,8 @@ fun ProfileContent(
     user: User,
     reviewsCount: Int,
     establishmentsAddedCount: Int,
-    reviews: List<Review> = emptyList(), // Adicione este parâmetro
-    places: List<Place> = emptyList(),   // Adicione este parâmetro
+    reviews: List<Review> = emptyList(),
+    establishments: List<Establishment> = emptyList(),
     onLogoutClicked: () -> Unit,
 ) {
     Column(
@@ -137,13 +131,9 @@ fun ProfileContent(
         horizontalAlignment = Alignment.CenterHorizontally,
         verticalArrangement = Arrangement.spacedBy(16.dp)
     ) {
-        user.name?.let {
-            Text(it, style = MaterialTheme.typography.headlineSmall, fontWeight = FontWeight.Bold)
-        }
-        user.email?.let {
-            Text(it, style = MaterialTheme.typography.bodyLarge)
-        }
-        user.bio?.let { // Exibe a bio se existir
+        Text(user.name, style = MaterialTheme.typography.headlineSmall, fontWeight = FontWeight.Bold)
+        Text(user.email, style = MaterialTheme.typography.bodyLarge)
+        user.bio?.let {
             Text(it, style = MaterialTheme.typography.bodyMedium)
         }
 
@@ -157,7 +147,6 @@ fun ProfileContent(
             ProfileStat(label = "Sítios Adicionados", value = establishmentsAddedCount.toString())
         }
 
-        // Lista de avaliações
         if (reviews.isNotEmpty()) {
             Text("Minhas Avaliações", style = MaterialTheme.typography.titleMedium)
             reviews.forEach { review ->
@@ -165,11 +154,11 @@ fun ProfileContent(
             }
         }
 
-        // Lista de lugares criados
-        if (places.isNotEmpty()) {
+        if (establishments.isNotEmpty()) {
             Text("Meus Sítios", style = MaterialTheme.typography.titleMedium)
-            places.forEach { place ->
-                Text("- $place", style = MaterialTheme.typography.bodySmall)            }
+            establishments.forEach { place ->
+                Text("- $place", style = MaterialTheme.typography.bodySmall)
+            }
         }
 
         Spacer(Modifier.weight(1f))

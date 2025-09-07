@@ -2,11 +2,14 @@ package com.cmu.sweet.view_model
 
 import android.app.Application
 import androidx.lifecycle.AndroidViewModel
+import androidx.lifecycle.ViewModel
+import androidx.lifecycle.ViewModelProvider
 import androidx.lifecycle.viewModelScope
 import com.cmu.sweet.SweetApplication
-import com.cmu.sweet.data.local.repository.UserRepository
+import com.cmu.sweet.data.repository.EstablishmentRepository
+import com.cmu.sweet.data.repository.UserRepository
 import com.cmu.sweet.ui.state.ProfileUiState
-import kotlinx.coroutines.delay
+import com.google.firebase.firestore.FirebaseFirestore
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.asStateFlow
@@ -14,88 +17,66 @@ import kotlinx.coroutines.flow.update
 import kotlinx.coroutines.launch
 import timber.log.Timber
 
-class ProfileViewModel(application: Application) : AndroidViewModel(application) {
+class ProfileViewModel(
+    application: Application,
+    private val userRepository: UserRepository,
+    private val establishmentRepository: EstablishmentRepository
+) : AndroidViewModel(application) {
 
     private val sweetApp = application as SweetApplication
-    private val userRepository: UserRepository = sweetApp.userRepository
-    val _uiState = MutableStateFlow(ProfileUiState())
+    private val _uiState = MutableStateFlow(ProfileUiState())
     val uiState: StateFlow<ProfileUiState> = _uiState.asStateFlow()
-
+    val firestore = FirebaseFirestore.getInstance()
     init {
         loadUserProfile()
     }
 
     fun loadUserProfile() {
-        Timber.Forest.d("loadUserProfile called")
         viewModelScope.launch {
-            _uiState.update { it.copy(isLoading = true, errorMessage = null) }
-            val currentFirebaseUser = userRepository.getCurrentUser()
-            if (currentFirebaseUser == null) {
-                Timber.Forest.w("No authenticated user found. Cannot load profile.")
-                _uiState.update {
-                    it.copy(
-                        isLoading = false,
-                        errorMessage = "Utilizador não autenticado."
-                    )
-                }
+            _uiState.update { it.copy(isLoading = true) }
+
+            val currentUser = userRepository.getCurrentUser()
+            if (currentUser == null) {
+                _uiState.update { it.copy(isLoading = false, errorMessage = "Usuário não autenticado.") }
                 return@launch
             }
-            Timber.Forest.d("Current user ID: ${currentFirebaseUser.uid}")
 
-            userRepository.getProfile(currentFirebaseUser.uid)
-                .onSuccess { userFromRepo -> // userFromRepo is of type User?
-                    if (userFromRepo != null) {
-                        Timber.Forest.d("User details loaded: ${userFromRepo.name}")
-                        _uiState.update {
-                            it.copy(
-                                isLoading = false,
-                                user = userFromRepo, // Now userFromRepo is User?
-                            )
-                        }
-                        loadUserStats(currentFirebaseUser.uid)
+            userRepository.getProfile(currentUser.uid)
+                .onSuccess { user ->
+                    if (user != null) {
+                        _uiState.update { it.copy(isLoading = false, user = user) }
+                        // ← Call your helper here
+                        loadUserEstablishments(user.id)
                     } else {
-                        Timber.Forest.w("User details not found for ID (via Result): ${currentFirebaseUser.uid}")
-                        _uiState.update {
-                            it.copy(
-                                isLoading = false,
-                                errorMessage = "Perfil não encontrado."
-                            )
-                        }
+                        _uiState.update { it.copy(isLoading = false, errorMessage = "Perfil não encontrado.") }
                     }
                 }
-                .onFailure { exception ->
-                    Timber.Forest.e(exception, "Error loading user profile from repository")
-                    _uiState.update {
-                        it.copy(
-                            isLoading = false,
-                            errorMessage = "Erro ao carregar perfil: ${exception.message}"
-                        )
-                    }
+                .onFailure { e ->
+                    _uiState.update { it.copy(isLoading = false, errorMessage = e.message) }
                 }
         }
     }
 
 
-    private fun loadUserStats(userId: String) {
-        viewModelScope.launch {
-            // Simulate loading stats
-            delay(500)
-            _uiState.update { it.copy(reviewsCount = 10, establishmentsAddedCount = 3) }
-            Timber.Forest.d("User stats loaded for $userId")
+    private suspend fun loadUserEstablishments(userId: String) {
+        val userEstablishments = establishmentRepository.getByUser(userId)
+        _uiState.update {
+            it.copy(
+                establishmentsAddedCount = userEstablishments.size,
+                places = userEstablishments
+            )
         }
     }
-
 
     fun attemptLogout(onLogoutConfirmed: () -> Unit) {
         viewModelScope.launch {
             _uiState.update { it.copy(isLoggingOut = true) }
             try {
-                delay(700)
-                _uiState.value =
-                    ProfileUiState(isLoading = false)
+                userRepository.signOut()
+                _uiState.value = ProfileUiState() // reset UI
                 onLogoutConfirmed()
-
             } catch (e: Exception) {
+                Timber.e(e, "Logout failed")
                 _uiState.update {
                     it.copy(
                         isLoggingOut = false,
@@ -109,4 +90,21 @@ class ProfileViewModel(application: Application) : AndroidViewModel(application)
     fun clearErrorMessage() {
         _uiState.update { it.copy(errorMessage = null) }
     }
+
+    class ProfileViewModelFactory(
+        private val userRepository: UserRepository,
+        private val application: Application,
+        private val establishmentRepository: EstablishmentRepository
+    ) : ViewModelProvider.Factory {
+        override fun <T : ViewModel> create(modelClass: Class<T>): T {
+            if (modelClass.isAssignableFrom(ProfileViewModel::class.java)) {
+                @Suppress("UNCHECKED_CAST")
+                return ProfileViewModel(application, userRepository, establishmentRepository) as T
+            }
+            throw IllegalArgumentException("Unknown ViewModel class")
+        }
+    }
+
+
+
 }

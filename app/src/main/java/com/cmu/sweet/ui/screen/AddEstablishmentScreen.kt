@@ -11,11 +11,10 @@ import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.unit.dp
 import androidx.lifecycle.viewmodel.compose.viewModel
 import androidx.navigation.NavController
-import com.cmu.sweet.data.local.repository.EstablishmentRepository
-import com.cmu.sweet.data.local.repository.SweetDatabase
+import com.cmu.sweet.data.repository.EstablishmentRepository
+import com.cmu.sweet.data.local.SweetDatabase
 import com.cmu.sweet.view_model.AddEstablishmentViewModel
 import com.google.firebase.firestore.FirebaseFirestore
-import kotlinx.coroutines.delay
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
@@ -29,7 +28,7 @@ fun AddEstablishmentScreen(
     val dao = db.establishmentDao()
     val firestore = FirebaseFirestore.getInstance()
 
-    val repository = EstablishmentRepository(dao, firestore)
+    val repository = EstablishmentRepository(firestore,dao)
 
     val viewModel: AddEstablishmentViewModel = viewModel(
         factory = AddEstablishmentViewModel.Factory(application, repository)

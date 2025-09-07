@@ -6,19 +6,18 @@ data class EstablishmentDetails(
     val id: String,
     val name: String,
     val address: String,
-    val phoneNumber: String?,
-    val openingHours: List<String>,
+    //val phoneNumber: String?,
+    //val openingHours: List<String>,
     val rating: Float,
-    val photos: List<String>,
+    //val photos: List<String>,
     val location: LatLng,
     val description: String?,
-    val reviews: List<ReviewUiModel>
+    //val reviews: List<ReviewUiModel>
 )
 
 data class ReviewUiModel(
     val id: String,
     val userName: String,
-    val userAvatarUrl: String?,
     val rating: Float,
     val comment: String,
     val date: String

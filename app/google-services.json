@@ -1,13 +1,13 @@
 {
   "project_info": {
-    "project_number": "311023316008",
-    "project_id": "sweetme-95772",
-    "storage_bucket": "sweetme-95772.firebasestorage.app"
+    "project_number": "296575430837",
+    "project_id": "bionic-slate-470122-c5",
+    "storage_bucket": "bionic-slate-470122-c5.firebasestorage.app"
   },
   "client": [
     {
       "client_info": {
-        "mobilesdk_app_id": "1:311023316008:android:0cc12de9d2cf17918b191d",
+        "mobilesdk_app_id": "1:296575430837:android:99671909447da3f015cefc",
         "android_client_info": {
           "package_name": "com.cmu.sweet"
         }
@@ -15,7 +15,7 @@
       "oauth_client": [],
       "api_key": [
         {
-          "current_key": "AIzaSyAMJaTJZ1ulwWaQ1YXveDId62QzVlsugzI"
+          "current_key": "AIzaSyAj5euiceTomJVILEJkuTTLgO43LnaDcCc"
         }
       ],
       "services": {

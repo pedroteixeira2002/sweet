@@ -10,9 +10,9 @@
               <option name="connection">
                 <ConnectionSetting>
                   <option name="appId" value="com.cmu.sweet" />
-                  <option name="mobileSdkAppId" value="1:311023316008:android:0cc12de9d2cf17918b191d" />
-                  <option name="projectId" value="sweetme-95772" />
-                  <option name="projectNumber" value="311023316008" />
+                  <option name="mobileSdkAppId" value="1:296575430837:android:99671909447da3f015cefc" />
+                  <option name="projectId" value="bionic-slate-470122-c5" />
+                  <option name="projectNumber" value="296575430837" />
                 </ConnectionSetting>
               </option>
               <option name="signal" value="SIGNAL_UNSPECIFIED" />

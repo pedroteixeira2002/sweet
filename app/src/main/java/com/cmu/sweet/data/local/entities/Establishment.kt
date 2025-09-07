@@ -2,27 +2,32 @@ package com.cmu.sweet.data.local.entities
 
 import androidx.room.Entity
 import androidx.room.ForeignKey
+import androidx.room.Index
 import androidx.room.PrimaryKey
+import com.google.firebase.firestore.IgnoreExtraProperties
 
 /**
  * Data class representing an establishment entity in the local database.
  * This class is annotated with @Entity to define the table name as "establishments".
  * It includes fields for the establishment's ID, name, address, type, description, latitude,
  * longitude, and the user who added it.
- * @see EstablishmentEntity
+ * @see Establishment
  *
  */
 @Entity(
     foreignKeys = [
         ForeignKey(
-            entity = UserEntity::class,
+            entity = User::class,
             parentColumns = ["id"],
             childColumns = ["addedBy"],
             onDelete = ForeignKey.CASCADE
         )
-    ]
+    ],
+    indices = [Index(value = ["addedBy"])],
+    tableName = "establishments"
 )
-data class EstablishmentEntity (
+@IgnoreExtraProperties
+data class Establishment(
     @PrimaryKey var id: String,
     var name: String,
     var address: String,
@@ -30,7 +35,8 @@ data class EstablishmentEntity (
     var description: String,
     var latitude: Double,
     var longitude: Double,
-    var addedBy: String
+    var addedBy: String,
+    val createdAt: Long? = null
 ) {
     /**
      * Default constructor required by Room.
@@ -48,7 +54,7 @@ data class EstablishmentEntity (
      * @param longitude Geographical longitude of the establishment.
      * @param addedBy ID of the user who added the establishment.
      * The id is auto-generated as a random UUID string.
-     * @see EstablishmentEntity
+     * @see Establishment
      *
      */
     constructor(

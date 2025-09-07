@@ -57,6 +57,10 @@ dependencies {
 
 
     implementation(libs.timber)
+    implementation(libs.material3)
+    implementation(libs.androidx.media3.common.ktx)
+    implementation(libs.ads.mobile.sdk)
+    implementation(libs.androidx.navigation.runtime.ktx)
     kapt(libs.androidx.room.compiler)
 
 

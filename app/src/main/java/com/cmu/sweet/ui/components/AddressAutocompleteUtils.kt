@@ -23,20 +23,18 @@ import kotlin.coroutines.suspendCoroutine
 suspend fun fetchAddressSuggestions(
     placesClient: PlacesClient,
     query: String
-): List<AutocompletePrediction> {
+): List<AutocompletePrediction> = suspendCoroutine { cont ->
     val request = FindAutocompletePredictionsRequest.builder()
         .setQuery(query)
         .build()
 
-    return suspendCoroutine { cont ->
-        placesClient.findAutocompletePredictions(request)
-            .addOnSuccessListener { response ->
-                cont.resume(response.autocompletePredictions)
-            }
-            .addOnFailureListener { exception ->
-                cont.resumeWithException(exception)
-            }
-    }
+    placesClient.findAutocompletePredictions(request)
+        .addOnSuccessListener { response ->
+            cont.resume(response.autocompletePredictions)
+        }
+        .addOnFailureListener { exception ->
+            cont.resumeWithException(exception)
+        }
 }
 
 
