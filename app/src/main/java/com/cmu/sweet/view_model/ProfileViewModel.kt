@@ -7,6 +7,7 @@ import androidx.lifecycle.ViewModelProvider
 import androidx.lifecycle.viewModelScope
 import com.cmu.sweet.SweetApplication
 import com.cmu.sweet.data.repository.EstablishmentRepository
+import com.cmu.sweet.data.repository.ReviewRepository
 import com.cmu.sweet.data.repository.UserRepository
 import com.cmu.sweet.ui.state.ProfileUiState
 import com.google.firebase.firestore.FirebaseFirestore
@@ -20,13 +21,14 @@ import timber.log.Timber
 class ProfileViewModel(
     application: Application,
     private val userRepository: UserRepository,
-    private val establishmentRepository: EstablishmentRepository
+    private val establishmentRepository: EstablishmentRepository,
+    private val reviewRepository: ReviewRepository
 ) : AndroidViewModel(application) {
 
-    private val sweetApp = application as SweetApplication
     private val _uiState = MutableStateFlow(ProfileUiState())
     val uiState: StateFlow<ProfileUiState> = _uiState.asStateFlow()
     val firestore = FirebaseFirestore.getInstance()
+
     init {
         loadUserProfile()
     }
@@ -47,6 +49,7 @@ class ProfileViewModel(
                         _uiState.update { it.copy(isLoading = false, user = user) }
                         // ← Call your helper here
                         loadUserEstablishments(user.id)
+                        loadUserReviews(user.id)
                     } else {
                         _uiState.update { it.copy(isLoading = false, errorMessage = "Perfil não encontrado.") }
                     }
@@ -57,7 +60,6 @@ class ProfileViewModel(
         }
     }
 
-
     private suspend fun loadUserEstablishments(userId: String) {
         val userEstablishments = establishmentRepository.getByUser(userId)
         _uiState.update {
@@ -66,6 +68,31 @@ class ProfileViewModel(
                 places = userEstablishments
             )
         }
+    }
+
+    private suspend fun loadUserReviews(userId: String) {
+        _uiState.update { it.copy(isLoading = true, errorMessage = null) }
+
+        val result = reviewRepository.getByUserOnce(userId)
+
+        result
+            .onSuccess { reviews ->
+                _uiState.update {
+                    it.copy(
+                        isLoading = false,
+                        reviews = reviews,
+                        reviewsCount = reviews.size
+                    )
+                }
+            }
+            .onFailure { throwable ->
+                _uiState.update {
+                    it.copy(
+                        isLoading = false,
+                        errorMessage = throwable.message ?: "Erro a carregar reviews"
+                    )
+                }
+            }
     }
 
     fun attemptLogout(onLogoutConfirmed: () -> Unit) {
@@ -91,15 +118,16 @@ class ProfileViewModel(
         _uiState.update { it.copy(errorMessage = null) }
     }
 
-    class ProfileViewModelFactory(
+    class Factory(
         private val userRepository: UserRepository,
         private val application: Application,
-        private val establishmentRepository: EstablishmentRepository
+        private val establishmentRepository: EstablishmentRepository,
+        private val reviewRepository: ReviewRepository
     ) : ViewModelProvider.Factory {
         override fun <T : ViewModel> create(modelClass: Class<T>): T {
             if (modelClass.isAssignableFrom(ProfileViewModel::class.java)) {
                 @Suppress("UNCHECKED_CAST")
-                return ProfileViewModel(application, userRepository, establishmentRepository) as T
+                return ProfileViewModel(application, userRepository, establishmentRepository, reviewRepository) as T
             }
             throw IllegalArgumentException("Unknown ViewModel class")
         }

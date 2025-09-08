@@ -42,8 +42,9 @@ class UserRepository(
     /** Add a new user */
     suspend fun add(user: User): Result<Unit> {
         return try {
-            val dto = user.toDto().copy(id = firestore.collection(COLLECTION).document().id)
-            firestore.collection(COLLECTION).document(dto.id).set(dto).await()
+            val uid = firebaseAuth.currentUser?.uid ?: throw Exception("Usuário não autenticado")
+            val dto = user.toDto().copy(id = uid)
+            firestore.collection("users").document(uid).set(dto).await()
             dao.insert(dto.toLocal())
             Result.success(Unit)
         } catch (e: Exception) {
@@ -72,7 +73,7 @@ class UserRepository(
         return try {
             val localUser = dao.getByIdSuspend(userId)
             if (localUser != null) return Result.success(localUser)
-
+            Timber.d("THIS IS USER ID%s", userId)
             val remoteResult = getProfileRemote(userId)
             remoteResult.onSuccess { user -> user?.let { dao.insert(it) } }
             remoteResult

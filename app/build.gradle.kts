@@ -61,6 +61,7 @@ dependencies {
     implementation(libs.androidx.media3.common.ktx)
     implementation(libs.ads.mobile.sdk)
     implementation(libs.androidx.navigation.runtime.ktx)
+    implementation(libs.androidx.datastore.preferences.core)
     kapt(libs.androidx.room.compiler)
 
 
@@ -88,6 +89,9 @@ dependencies {
     implementation(libs.androidx.room.runtime)
 
     testImplementation(libs.junit)
+
+    implementation("androidx.datastore:datastore-preferences:1.1.1")
+    implementation("androidx.datastore:datastore-preferences-core:1.1.1")
 
 
     androidTestImplementation(libs.androidx.junit)

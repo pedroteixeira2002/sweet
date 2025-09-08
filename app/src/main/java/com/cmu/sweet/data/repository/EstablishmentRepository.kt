@@ -2,9 +2,11 @@ package com.cmu.sweet.data.repository
 
 import com.cmu.sweet.data.local.dao.EstablishmentDao
 import com.cmu.sweet.data.local.entities.Establishment
+import com.cmu.sweet.data.local.entities.Review
 import com.cmu.sweet.data.mappers.toDto
 import com.cmu.sweet.data.mappers.toLocal
 import com.cmu.sweet.data.remote.dto.EstablishmentDto
+import com.cmu.sweet.data.remote.dto.ReviewDto
 import com.cmu.sweet.utils.haversineDistance
 import com.google.firebase.firestore.FirebaseFirestore
 import kotlinx.coroutines.tasks.await
@@ -61,6 +63,39 @@ class EstablishmentRepository(
             .await()
 
         return snapshot.toObjects(EstablishmentDto::class.java).map { it.toLocal() }
+    }
+
+    suspend fun getReviews(estId: String): Result<List<Review>> {
+        return try {
+            val snapshot = firestore.collection("reviews")
+                .whereEqualTo("establishmentId", estId)
+                .get()
+                .await()
+            val dtos = snapshot.toObjects(ReviewDto::class.java)
+            val reviews = dtos.map { it.toLocal() }
+            Result.success(reviews)
+        } catch (e: Exception) {
+            Timber.e(e, "Error fetching establishment reviews")
+            Result.failure(e)
+        }
+    }
+
+    suspend fun getRating(estId: String): Result<Double> {
+        return try {
+            val snapshot = firestore.collection("reviews")
+                .whereEqualTo("establishmentId", estId)
+                .get()
+                .await()
+            val dtos = snapshot.toObjects(ReviewDto::class.java)
+            val reviews = dtos.map { it.toLocal() }
+            val average = if (reviews.isNotEmpty()) {
+                reviews.map { it.rating }.average()
+            } else 0.0
+            Result.success(average)
+        } catch (e: Exception) {
+            Timber.e(e, "Error fetching establishment rating")
+            Result.failure(e)
+        }
     }
 
     suspend fun fetchMyEstablishments(userId: String): Result<List<Establishment>> {

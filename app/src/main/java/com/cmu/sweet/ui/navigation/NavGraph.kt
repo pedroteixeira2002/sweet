@@ -1,13 +1,19 @@
 package com.cmu.sweet.ui.navigation
 
-import androidx.compose.material3.Text
+import android.app.Application
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.remember
+import androidx.compose.ui.Modifier
+import androidx.compose.ui.platform.LocalContext
 import androidx.lifecycle.viewmodel.compose.viewModel
 import androidx.navigation.NavType
 import androidx.navigation.compose.NavHost
 import androidx.navigation.compose.composable
 import androidx.navigation.compose.rememberNavController
 import androidx.navigation.navArgument
+import com.cmu.sweet.data.local.SweetDatabase
+import com.cmu.sweet.data.repository.EstablishmentRepository
+import com.cmu.sweet.data.repository.UserRepository
 import com.cmu.sweet.ui.screen.LoginScreen
 import com.cmu.sweet.ui.screen.HomeScreen
 import com.cmu.sweet.ui.screen.SignUpScreen
@@ -17,8 +23,12 @@ import com.cmu.sweet.ui.screen.SplashScreen
 import com.cmu.sweet.ui.screen.WelcomeScreen
 import com.cmu.sweet.ui.screen.EditProfileScreen
 import com.cmu.sweet.ui.screen.AddReviewScreen
+import com.cmu.sweet.ui.screen.SettingsScreen
 import com.cmu.sweet.view_model.EstablishmentDetailsViewModel
-import timber.log.Timber
+import com.cmu.sweet.view_model.LightSensorViewModel
+import com.cmu.sweet.view_model.SettingsViewModel
+import com.google.firebase.auth.FirebaseAuth
+import com.google.firebase.firestore.FirebaseFirestore
 
 sealed class Screen(val route: String) {
     object Splash : Screen("splash")
@@ -29,6 +39,7 @@ sealed class Screen(val route: String) {
     object EstablishmentDetails : Screen("establishmentDetails/{establishmentId}") {
         fun createRoute(establishmentId: String) = "establishmentDetails/$establishmentId"
     }
+
     object AddEstablishment : Screen("addEstablishment")
     object AddReview : Screen("addReview?establishmentId={establishmentId}") {
         fun createRoute(establishmentId: String? = null): String {
@@ -39,6 +50,7 @@ sealed class Screen(val route: String) {
             }
         }
     }
+
     object EditProfile : Screen("editProfile/{userId}") {
         const val userIdArg = "userId"
         val routeWithArgs = "editProfile/{$userIdArg}"
@@ -51,10 +63,23 @@ sealed class Screen(val route: String) {
 }
 
 @Composable
-fun AppNavGraph(startDestination: String = Screen.Splash.route) {
+fun AppNavGraph(
+    settingsViewModel: SettingsViewModel
+) {
     val navController = rememberNavController()
+    val context = LocalContext.current
 
-    NavHost(navController = navController, startDestination = startDestination) {
+    val userDao = SweetDatabase.getInstance(context).userDao()
+    val establishmentDao = SweetDatabase.getInstance(context).establishmentDao()
+    val firebaseAuth = FirebaseAuth.getInstance()
+    val firestore = FirebaseFirestore.getInstance()
+    val userRepository = UserRepository(firestore, userDao, firebaseAuth)
+    val establishmentRepository = EstablishmentRepository(firestore, establishmentDao)
+    val lightSensorViewModel = remember { LightSensorViewModel(context) }
+
+
+
+    NavHost(navController = navController, startDestination = Screen.Splash.route) {
 
         composable(Screen.Splash.route) {
             SplashScreen(navController = navController)
@@ -105,12 +130,15 @@ fun AppNavGraph(startDestination: String = Screen.Splash.route) {
                     navController.navigate(Screen.Login.route) {
                         popUpTo(navController.graph.startDestinationId) {
                             inclusive = true
-                        } // Or popUpTo(Screen.Home.route)
+                        }
                         launchSingleTop = true
                     }
                 },
                 onNavigateToEditProfile = { userId ->
                     navController.navigate(Screen.EditProfile.createRoute(userId)) // Define this screen/route
+                },
+                onNavigateToSettings = {
+                    navController.navigate("settings")
                 }
             )
         }
@@ -118,21 +146,21 @@ fun AppNavGraph(startDestination: String = Screen.Splash.route) {
             route = "establishmentDetails/{establishmentId}",
             arguments = listOf(navArgument("establishmentId") { type = NavType.StringType })
         ) { navBackStackEntry ->
-
-            val viewModel: EstablishmentDetailsViewModel = viewModel(
-                viewModelStoreOwner = navBackStackEntry
-            )
-
             EstablishmentDetailsScreen(
                 onNavigateBack = { navController.popBackStack() },
-                viewModel = viewModel
+                viewModel = viewModel<EstablishmentDetailsViewModel>(
+                    factory = EstablishmentDetailsViewModel.Factory(
+                        context.applicationContext as Application,
+                        establishmentRepository
+                    )
+                )
             )
         }
 
-
         composable(Screen.AddEstablishment.route) {
-            AddEstablishmentScreen(navController = navController)
+            AddEstablishmentScreen(navController)
         }
+
         composable(
             route = Screen.AddReview.route,
             arguments = listOf(navArgument("establishmentId") {
@@ -142,21 +170,25 @@ fun AppNavGraph(startDestination: String = Screen.Splash.route) {
             })
         ) { backStackEntry ->
             val establishmentId = backStackEntry.arguments?.getString("establishmentId")
-            AddReviewScreen(navController = navController , establishmentId ="40tmGYETnTMtuXTHfVHj")
+            AddReviewScreen(navController = navController, establishmentId = "40tmGYETnTMtuXTHfVHj")
         }
+
         composable(
             route = Screen.EditProfile.routeWithArgs,
             arguments = Screen.EditProfile.arguments
         ) { backStackEntry ->
-            val userId = backStackEntry.arguments?.getString(Screen.EditProfile.userIdArg)
-            if (userId != null) {
-                EditProfileScreen(
-                    onNavigateBack = { navController.popBackStack() }
-                )
-            } else {
-                Text("Erro: User ID não fornecido para Edit Profile.")
-                Timber.tag("AppNavGraph").e("User ID is null for EditProfile route.")
-            }
+            EditProfileScreen(
+                onNavigateBack = {
+                    navController.previousBackStackEntry
+                        ?.savedStateHandle
+                        ?.set("profile_updated", true)
+
+                    navController.popBackStack()
+                }
+            )
+        }
+        composable(route = "settings") {
+            SettingsScreen(navController, settingsViewModel, lightSensorViewModel)
         }
     }
 }

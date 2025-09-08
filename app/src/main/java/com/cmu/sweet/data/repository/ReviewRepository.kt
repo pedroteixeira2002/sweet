@@ -14,13 +14,14 @@ class ReviewRepository(
     private val firestore: FirebaseFirestore,
     private val dao: ReviewDao
 ) {
-    companion object { private const val COLLECTION = "reviews" }
+    companion object {
+        private const val COLLECTION = "reviews"
+    }
 
     /** Local LiveData */
     fun getAll(): LiveData<List<Review>> = dao.getAll()
     fun getById(id: String): LiveData<Review?> = dao.getById(id)
     fun getByUser(userId: String): LiveData<List<Review>> = dao.getByUserId(userId)
-    fun getByEstablishment(estId: String): LiveData<List<Review>> = dao.getByEstablishmentId(estId)
 
     /** Sync all from Firestore to Room */
     suspend fun syncAll(): Result<Unit> {
@@ -35,9 +36,36 @@ class ReviewRepository(
         }
     }
 
-    /**
-     *
-     */
+    suspend fun getByEstablishment(estId: String): Result<List<Review>> {
+        return try {
+            val snapshot = firestore.collection(COLLECTION)
+                .whereEqualTo("establishmentId", estId)
+                .get()
+                .await()
+            val dtos = snapshot.toObjects(ReviewDto::class.java)
+            val entities = dtos.map { it.toLocal() }
+            Result.success(entities)
+        } catch (e: Exception) {
+            Timber.e(e, "Error fetching reviews for establishment $estId")
+            Result.failure(e)
+        }
+    }
+
+    suspend fun getByUserOnce(userId: String): Result<List<Review>> {
+        return try {
+            val snapshot = firestore.collection(COLLECTION)
+                .whereEqualTo("userId", userId)
+                .get()
+                .await()
+            val dtos = snapshot.toObjects(ReviewDto::class.java)
+            val entities = dtos.map { it.toLocal() }
+            Result.success(entities)
+        } catch (e: Exception) {
+            Timber.e(e, "Error fetching reviews for user $userId")
+            Result.failure(e)
+        }
+    }
+
     suspend fun add(review: Review): Result<Unit> {
         return try {
             val dto = review.toDto() // keep the same ID

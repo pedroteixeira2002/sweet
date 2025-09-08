@@ -45,7 +45,7 @@ fun EstablishmentCard(
             Column(Modifier.weight(1f)) {
                 Text(establishment.name, style = MaterialTheme.typography.titleMedium)
                 Text(
-                    "⭐ ${establishment.rating} • ${establishment.distance}",
+                    "⭐ ${establishment.rating} • ${establishment.distance?.toInt() ?: "N/A"}m away",
                     style = MaterialTheme.typography.bodySmall
                 )
             }

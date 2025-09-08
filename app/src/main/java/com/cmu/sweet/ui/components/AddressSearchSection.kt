@@ -16,16 +16,10 @@ import androidx.compose.material3.ExposedDropdownMenuDefaults.textFieldColors
 import androidx.compose.material3.Text
 import androidx.compose.material3.TextField
 import androidx.compose.runtime.Composable
-import androidx.compose.runtime.LaunchedEffect
-import androidx.compose.runtime.getValue
-import androidx.compose.runtime.mutableStateOf
-import androidx.compose.runtime.remember
-import androidx.compose.runtime.setValue
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.unit.dp
 import com.google.android.libraries.places.api.model.AutocompletePrediction
-import kotlinx.coroutines.delay
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
@@ -56,15 +50,13 @@ fun AddressSearchBar(
                 singleLine = true,
                 modifier = Modifier.fillMaxWidth(),
                 colors = textFieldColors(
-                    focusedTextColor = Color.Black,
-                    focusedContainerColor = Color.White,
-                    cursorColor = Color.Black,
-                    focusedPlaceholderColor = Color.White,
+                    focusedContainerColor = Color.Transparent,
+                    unfocusedContainerColor = Color.Transparent,
                     focusedIndicatorColor = Color.Transparent,
-                    unfocusedIndicatorColor = Color.Transparent,
-                    disabledIndicatorColor = Color.Transparent
+                    unfocusedIndicatorColor = Color.Transparent
                 )
             )
+
         }
 
         Spacer(modifier = Modifier.height(4.dp))
@@ -76,7 +68,6 @@ fun AddressSearchBar(
                 modifier = Modifier
                     .fillMaxWidth()
                     .background(Color.White, textFieldShape)
-                    .border(1.dp, Color.Gray, textFieldShape)
             ) {
                 suggestions.forEach { prediction ->
                     DropdownMenuItem(

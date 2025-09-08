@@ -16,8 +16,6 @@ import androidx.compose.animation.fadeOut
 import androidx.compose.animation.slideInVertically
 import androidx.compose.animation.slideOutVertically
 import androidx.compose.foundation.layout.*
-import androidx.compose.foundation.lazy.LazyColumn
-import androidx.compose.foundation.lazy.items
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.Add
 import androidx.compose.material.icons.filled.Close
@@ -38,28 +36,19 @@ import androidx.core.content.ContextCompat
 import androidx.lifecycle.viewmodel.compose.viewModel
 import com.cmu.sweet.SweetApplication
 import com.cmu.sweet.data.local.SweetDatabase
+import com.cmu.sweet.data.repository.EstablishmentRepository
+import com.cmu.sweet.data.repository.ReviewRepository
 import com.cmu.sweet.data.repository.UserRepository
 import com.cmu.sweet.ui.components.AppBottomNavigationBar
-import com.cmu.sweet.ui.components.EstablishmentCard
 import com.cmu.sweet.ui.components.MiniFabItem
-import com.cmu.sweet.ui.state.HomeUiState
 import com.cmu.sweet.ui.state.LocationPermissionState
 import com.cmu.sweet.ui.navigation.BottomNavItem
 import com.cmu.sweet.view_model.HomeViewModel
-import com.cmu.sweet.view_model.ProfileViewModel
-import com.google.android.gms.maps.CameraUpdateFactory
+import com.cmu.sweet.view_model.LeaderboardViewModel
 import com.google.android.gms.maps.model.CameraPosition
-import com.google.android.gms.maps.model.LatLng
-import com.google.android.libraries.places.api.model.AutocompletePrediction
 import com.google.firebase.auth.FirebaseAuth
 import com.google.firebase.firestore.FirebaseFirestore
-import com.google.maps.android.compose.CameraPositionState
-import com.google.maps.android.compose.GoogleMap
-import com.google.maps.android.compose.MapProperties
-import com.google.maps.android.compose.MapUiSettings
-import com.google.maps.android.compose.Marker
 import com.google.maps.android.compose.rememberCameraPositionState
-import com.google.maps.android.compose.rememberUpdatedMarkerState
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
@@ -69,18 +58,20 @@ fun HomeScreen(
     onNavigateToAddEstablishment: () -> Unit,
     onNavigateToAddReview: (String?) -> Unit,
     onNavigateToLogin: () -> Unit,
-    onNavigateToEditProfile: (String) -> Unit
+    onNavigateToEditProfile: (String) -> Unit,
+    onNavigateToSettings: () -> Unit
 ) {
     val activity = LocalActivity.current as? ComponentActivity
     val context = LocalContext.current
 
     val userDao = SweetDatabase.getInstance(context).userDao()
     val establishmentDao = SweetDatabase.getInstance(context).establishmentDao()
+    val reviewDao = SweetDatabase.getInstance(context).reviewDao()
     val firebaseAuth = FirebaseAuth.getInstance()
     val firestore = FirebaseFirestore.getInstance()
-    val userRepository = UserRepository(firestore, userDao,firebaseAuth)
-    val establishmentRepository = com.cmu.sweet.data.repository.EstablishmentRepository(firestore, establishmentDao)
-
+    val userRepository = UserRepository(firestore, userDao, firebaseAuth)
+    val establishmentRepository = EstablishmentRepository(firestore, establishmentDao)
+    val reviewRepository = ReviewRepository(firestore, reviewDao)
     var currentBottomNavItem by rememberSaveable(stateSaver = BottomNavItem.Saver) {
         mutableStateOf(BottomNavItem.Home)
     }
@@ -234,23 +225,37 @@ fun HomeScreen(
             )
         }
 
-        Box(modifier = Modifier.padding(innerPadding)) {
+        Box(
+            modifier = Modifier
+                .padding(innerPadding)
+                .fillMaxSize()
+        ) {
             when (currentBottomNavItem) {
                 BottomNavItem.Home -> HomeSectionContent(
                     homeViewModel = homeViewModel,
                     cameraPositionState = cameraPositionState,
                     uiState = homeContentUiState,
-                    onNavigateToDetails = onNavigateToDetails
+                    onNavigateToDetails = onNavigateToDetails,
                 )
 
                 BottomNavItem.Leaderboard -> LeaderboardScreen(
+                    viewModel = viewModel(
+                        factory = LeaderboardViewModel.Factory(
+                            context.applicationContext as SweetApplication,
+                            establishmentRepository,
+                            reviewRepository
+                        )
+                    ),
+                    onEstablishmentClick = onNavigateToDetails
                 )
 
                 BottomNavItem.Profile -> ProfileScreen(
                     userRepository = userRepository,
                     establishmentRepository = establishmentRepository,
                     onNavigateToLogin = onNavigateToLogin,
-                    onNavigateToEditProfile = onNavigateToEditProfile
+                    onNavigateToEditProfile = onNavigateToEditProfile,
+                    reviewRepository = reviewRepository,
+                    onNavigateToSettings = onNavigateToSettings
                 )
             }
         }

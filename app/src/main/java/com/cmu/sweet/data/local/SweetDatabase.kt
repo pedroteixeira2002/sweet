@@ -23,7 +23,7 @@ import com.cmu.sweet.data.local.entities.relations.Converter
         User::class,
         Establishment::class,
         Review::class],
-    version = 6,
+    version = 7,
     exportSchema = false
 )
 @TypeConverters(Converter::class)

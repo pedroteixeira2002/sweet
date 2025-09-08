@@ -3,6 +3,8 @@ package com.cmu.sweet.view_model
 import android.app.Application
 import android.util.Patterns
 import androidx.lifecycle.AndroidViewModel
+import androidx.lifecycle.ViewModel
+import androidx.lifecycle.ViewModelProvider
 import androidx.lifecycle.viewModelScope
 import com.cmu.sweet.data.local.dao.UserDao
 import com.cmu.sweet.data.local.entities.User
@@ -152,4 +154,21 @@ class AuthViewModel(
     fun clearGeneralError() {
         _uiState.update { it.copy(generalRegistrationError = null) }
     }
+
+    class Factory(
+        private val application: Application,
+        private val userDao: UserDao,
+        private val firestore: FirebaseFirestore = FirebaseFirestore.getInstance(),
+        private val firebaseAuth: FirebaseAuth = FirebaseAuth.getInstance()
+    ) : ViewModelProvider.Factory {
+
+        @Suppress("UNCHECKED_CAST")
+        override fun <T : ViewModel> create(modelClass: Class<T>): T {
+            if (modelClass.isAssignableFrom(AuthViewModel::class.java)) {
+                return AuthViewModel(application, userDao, firestore, firebaseAuth) as T
+            }
+            throw IllegalArgumentException("Unknown ViewModel class: ${modelClass.name}")
+        }
+    }
+
 }

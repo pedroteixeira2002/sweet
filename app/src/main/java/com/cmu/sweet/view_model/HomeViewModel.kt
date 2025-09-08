@@ -171,12 +171,8 @@ class HomeViewModel(application: Application) : AndroidViewModel(application) {
     }
 
     fun onDismissPermissionRationaleDialog() {
-        // Após dispensar o rationale, o estado da permissão permanece como estava (NEEDS_RATIONALE ou DENIED)
-        // A UI decidirá se tenta pedir novamente ou não.
         _uiState.update { it.copy(showPermissionRationaleDialog = false) }
-        // Se após mostrar o rationale, você quer que o estado volte para DENIED para simplificar a lógica da UI:
-        // _uiState.update { it.copy(showPermissionRationaleDialog = false, locationPermissionState = LocationPermissionState.DENIED) }
-    }
+        }
 
     fun onDismissPermanentlyDeniedDialog() {
         _uiState.update { it.copy(showPermanentlyDeniedDialog = false) }
@@ -241,7 +237,6 @@ class HomeViewModel(application: Application) : AndroidViewModel(application) {
 
                 Timber.d("Fetched ${nearbyEntities.size} establishments from Firestore")
 
-                // Map to UI state with distance
                 val uiModels = nearbyEntities.map { establishment ->
                     val distance = haversineDistance(
                         center.latitude,
@@ -264,6 +259,7 @@ class HomeViewModel(application: Application) : AndroidViewModel(application) {
                         latitude = establishment.latitude,
                         longitude = establishment.longitude,
                         distance = distance,
+                        rating = repository.getRating(establishment.id).getOrNull(),
                         type = establishment.type,
                         description = establishment.description,
                         addedBy = establishment.addedBy

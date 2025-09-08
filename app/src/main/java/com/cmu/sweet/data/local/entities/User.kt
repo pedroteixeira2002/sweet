@@ -13,9 +13,9 @@ import androidx.room.PrimaryKey
 @Entity(tableName = "users")
 data class User(
     @PrimaryKey
-    var id: String ,
-    var name: String ,
-    var email: String ,
+    var id: String,
+    var name: String,
+    var email: String,
     var bio: String?,
     var createdAt: Long?
 ) {
@@ -53,6 +53,14 @@ data class User(
      * @see User
      *
      */
+    constructor(id: String, name: String, bio: String, email: String) : this(
+        id = id,
+        name = name,
+        email = email,
+        bio = bio,
+        createdAt = null
+    )
+
     constructor(id: String, name: String, email: String) : this(
         id = id,
         name = name,

@@ -2,6 +2,7 @@ package com.cmu.sweet.ui.screen
 
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
+import androidx.compose.foundation.layout.PaddingValues
 import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
@@ -59,9 +60,10 @@ fun HomeSectionContent(
     var searchRadius by remember { mutableFloatStateOf(1000f) }
     val scope = rememberCoroutineScope()
 
-    // Carrega establishments automaticamente quando a localização estiver disponível
+
+    // Atualiza establishments quando a localização ou radius mudar
     LaunchedEffect(uiState.userLocation, searchRadius) {
-        uiState.userLocation?.let { location ->
+        uiState.userLocation.let { location ->
             homeViewModel.loadEstablishmentsNearby(location, searchRadius.toDouble())
         }
     }
@@ -70,8 +72,8 @@ fun HomeSectionContent(
         scaffoldState = scaffoldState,
         sheetPeekHeight = 64.dp,
         sheetContent = {
-            Spacer(Modifier.height(8.dp))
             Column(Modifier.padding(12.dp)) {
+                Spacer(Modifier.height(8.dp))
                 Text("Estabelecimentos próximos", style = MaterialTheme.typography.titleLarge)
                 Spacer(Modifier.height(8.dp))
 
@@ -96,20 +98,21 @@ fun HomeSectionContent(
                             CircularProgressIndicator()
                         }
                     }
+
                     uiState.establishments.isEmpty() -> {
                         Box(Modifier.fillMaxWidth(), contentAlignment = Alignment.Center) {
                             Text("Nenhum estabelecimento encontrado por perto.")
                         }
                     }
+
                     else -> {
-                        LazyColumn {
+                        LazyColumn(
+                            modifier = Modifier.fillMaxWidth()
+                        ) {
                             items(uiState.establishments, key = { it.id }) { establishment ->
                                 EstablishmentCard(
                                     establishment = establishment,
-                                    onClick = {
-                                        // Corrige a rota para bater com NavGraph
-                                        onNavigateToDetails(establishment.id)
-                                    }
+                                    onClick = { onNavigateToDetails(establishment.id) }
                                 )
                             }
                         }
@@ -119,17 +122,27 @@ fun HomeSectionContent(
         },
         modifier = modifier.fillMaxSize()
     ) { innerPadding ->
-        Box(Modifier.padding(innerPadding)) {
+
+        // Box para o mapa full screen, ignorando innerPadding do BottomSheet
+        Box(modifier = Modifier.fillMaxSize()) {
             GoogleMap(
                 modifier = Modifier.fillMaxSize(),
                 cameraPositionState = cameraPositionState,
                 uiSettings = MapUiSettings(zoomControlsEnabled = true),
                 onMapLoaded = { homeViewModel.onMapLoaded() },
                 properties = MapProperties(
-                    isMyLocationEnabled = uiState.locationPermissionState == LocationPermissionState.GRANTED
+                    isMyLocationEnabled = uiState.locationPermissionState == LocationPermissionState.GRANTED,
+                ),
+
+                contentPadding = PaddingValues(
+                    top = 80.dp,       // Espaço para a SearchBar
+                    bottom = 200.dp,   // Espaço para BottomSheet
+                    start = 16.dp,
+                    end = 16.dp
                 )
             ) {
-                uiState.userLocation?.let { location ->
+                // Centraliza câmera na localização do usuário
+                uiState.userLocation.let { location ->
                     LaunchedEffect(location) {
                         cameraPositionState.animate(
                             CameraUpdateFactory.newLatLngZoom(location, 15f),
@@ -138,19 +151,18 @@ fun HomeSectionContent(
                     }
                 }
 
+                // Adiciona marcadores para os estabelecimentos
                 uiState.establishments.forEach { est ->
                     Marker(
                         state = rememberUpdatedMarkerState(position = est.location),
                         title = est.name,
                         snippet = "Rating: ${est.rating ?: "N/A"} - ${est.distance?.toInt() ?: "?"} m",
-                        onInfoWindowClick = {
-                            // Navega para details usando a rota correta
-                            onNavigateToDetails(est.id)
-                        }
+                        onInfoWindowClick = { onNavigateToDetails(est.id) }
                     )
                 }
             }
 
+            // Barra de pesquisa sobre o mapa
             AddressSearchBar(
                 searchText = searchQuery,
                 onSearchTextChange = { query ->
@@ -163,7 +175,6 @@ fun HomeSectionContent(
                 suggestions = suggestions,
                 onSuggestionClick = { prediction ->
                     searchQuery = prediction.getFullText(null).toString()
-
                     homeViewModel.selectSuggestion(prediction) { latLng ->
                         scope.launch {
                             cameraPositionState.animate(
@@ -177,10 +188,12 @@ fun HomeSectionContent(
                 }
             )
 
+            // Indicador de loading de localização
             if (uiState.isLoadingLocation) {
                 CircularProgressIndicator(Modifier.align(Alignment.Center))
             }
 
+            // Snackbar de erros de localização
             uiState.locationError?.let { error ->
                 Snackbar(
                     modifier = Modifier
@@ -194,3 +207,5 @@ fun HomeSectionContent(
         }
     }
 }
+
+

@@ -13,5 +13,5 @@ data class EstablishmentHomeUiState(
     val addedBy: String,
     val location: LatLng = LatLng(latitude, longitude),
     val distance: Double? = null,
-    val rating: Float? = null
+    val rating: Double? = null
 )

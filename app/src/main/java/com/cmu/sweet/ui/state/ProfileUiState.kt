@@ -11,6 +11,6 @@ data class ProfileUiState(
     val errorMessage: String? = null,
     val reviewsCount: Int = 0,
     val establishmentsAddedCount: Int = 0,
-    val reviews: List<Review> = emptyList(),   // add this
-    val places: List<Establishment> = emptyList()      // add this
+    val reviews: List<Review> = emptyList(),
+    val places: List<Establishment> = emptyList()
 )

@@ -13,17 +13,30 @@ import androidx.compose.ui.text.input.PasswordVisualTransformation
 import androidx.compose.ui.unit.dp
 import androidx.lifecycle.ViewModelProvider
 import androidx.lifecycle.viewmodel.compose.viewModel
+import com.cmu.sweet.data.local.SweetDatabase
 import com.cmu.sweet.view_model.AuthViewModel
+import com.google.firebase.auth.FirebaseAuth
+import com.google.firebase.firestore.FirebaseFirestore
 
 @Composable
 fun SignUpScreen(
     onRegisterSuccess: () -> Unit,
     onLoginClick: () -> Unit
 ) {
-    val application = LocalContext.current.applicationContext as Application
+    val context = LocalContext.current
+    val userDao = SweetDatabase.getInstance(context).userDao()
+    val firestore = FirebaseFirestore.getInstance()
+    val firebaseAuth = FirebaseAuth.getInstance()
+
     val viewModel: AuthViewModel = viewModel(
-        factory = ViewModelProvider.AndroidViewModelFactory.getInstance(application)
+        factory = AuthViewModel.Factory(
+            context.applicationContext as Application,
+            userDao,
+            firestore,
+            firebaseAuth
+        )
     )
+
     val state by viewModel.uiState.collectAsState()
 
     LaunchedEffect(state.registrationSuccess) {

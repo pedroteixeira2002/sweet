@@ -7,6 +7,7 @@ import androidx.compose.foundation.verticalScroll
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.filled.ExitToApp
 import androidx.compose.material.icons.filled.Edit
+import androidx.compose.material.icons.filled.Settings
 import androidx.compose.material3.*
 import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
@@ -14,11 +15,15 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
+import androidx.lifecycle.Lifecycle
+import androidx.lifecycle.LifecycleEventObserver
+import androidx.lifecycle.compose.LocalLifecycleOwner
 import androidx.lifecycle.viewmodel.compose.viewModel
 import com.cmu.sweet.data.local.entities.Establishment
 import com.cmu.sweet.data.local.entities.Review
 import com.cmu.sweet.data.local.entities.User
 import com.cmu.sweet.data.repository.EstablishmentRepository
+import com.cmu.sweet.data.repository.ReviewRepository
 import com.cmu.sweet.data.repository.UserRepository
 import com.cmu.sweet.view_model.ProfileViewModel
 
@@ -28,14 +33,30 @@ fun ProfileScreen(
     modifier: Modifier = Modifier,
     userRepository: UserRepository,
     establishmentRepository: EstablishmentRepository,
+    reviewRepository: ReviewRepository,
     onNavigateToLogin: () -> Unit,
-    onNavigateToEditProfile: (userId: String) -> Unit
+    onNavigateToEditProfile: (userId: String) -> Unit,
+    onNavigateToSettings: () -> Unit
 ) {
     val context = LocalContext.current.applicationContext as Application
-    val factory = ProfileViewModel.ProfileViewModelFactory(userRepository, context, establishmentRepository)
+    val factory = ProfileViewModel.Factory(
+        userRepository, context, establishmentRepository, reviewRepository)
     val profileViewModel: ProfileViewModel = viewModel(factory = factory)
     val uiState by profileViewModel.uiState.collectAsState()
     var showLogoutDialog by remember { mutableStateOf(false) }
+    val lifecycleOwner = LocalLifecycleOwner.current
+
+    DisposableEffect(lifecycleOwner) {
+        val observer = LifecycleEventObserver { _, event ->
+            if (event == Lifecycle.Event.ON_RESUME) {
+                profileViewModel.loadUserProfile()
+            }
+        }
+        lifecycleOwner.lifecycle.addObserver(observer)
+        onDispose {
+            lifecycleOwner.lifecycle.removeObserver(observer)
+        }
+    }
 
     Scaffold(
         topBar = {
@@ -45,6 +66,9 @@ fun ProfileScreen(
                     uiState.user?.let {
                         IconButton(onClick = { onNavigateToEditProfile(it.id) }) {
                             Icon(Icons.Filled.Edit, contentDescription = "Editar Perfil")
+                        }
+                        IconButton(onClick = { onNavigateToSettings() }) {
+                            Icon(Icons.Default.Settings, contentDescription = "Definições")
                         }
                     }
                 }

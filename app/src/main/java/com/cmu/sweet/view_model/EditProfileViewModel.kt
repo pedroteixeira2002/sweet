@@ -4,7 +4,11 @@ import android.app.Application
 import androidx.lifecycle.AndroidViewModel
 import androidx.lifecycle.LiveData
 import androidx.lifecycle.MutableLiveData
+import androidx.lifecycle.ViewModel
+import androidx.lifecycle.ViewModelProvider
 import androidx.lifecycle.viewModelScope
+import com.cmu.sweet.data.local.entities.User
+import com.cmu.sweet.data.repository.UserRepository
 import com.cmu.sweet.ui.state.EditProfileUiState
 import com.google.firebase.auth.FirebaseAuth
 import com.google.firebase.firestore.FirebaseFirestore
@@ -13,7 +17,8 @@ import kotlinx.coroutines.tasks.await
 import timber.log.Timber
 
 class EditProfileViewModel(
-    application: Application
+    application: Application,
+    private val userRepository: UserRepository
 ) : AndroidViewModel(application) {
 
     private val auth = FirebaseAuth.getInstance()
@@ -68,7 +73,6 @@ class EditProfileViewModel(
         )
     }
 
-
     fun saveProfile() {
         viewModelScope.launch {
             val state = _uiState.value ?: return@launch
@@ -76,14 +80,15 @@ class EditProfileViewModel(
 
             _uiState.value = state.copy(isSaving = true, generalError = null)
 
-
             try {
-                val updates = mutableMapOf<String, Any>(
-                    "displayName" to state.nameInput,
-                    "bio" to state.bioInput
+                val updatedUser = User(
+                    id = state.userId,
+                    name = state.nameInput,
+                    email = state.emailDisplay,
+                    bio = state.bioInput
                 )
-
-                firestore.collection("users").document(state.userId).update(updates).await()
+                userRepository.update(updatedUser).getOrThrow()
+                userRepository.syncAll();
 
                 _uiState.value = state.copy(
                     isSaving = false,
@@ -100,4 +105,18 @@ class EditProfileViewModel(
             }
         }
     }
+
+    class Factory(
+        private val application: Application,
+        private val userRepository: UserRepository
+    ) : ViewModelProvider.Factory {
+        override fun <T : ViewModel> create(modelClass: Class<T>): T {
+            if (modelClass.isAssignableFrom(EditProfileViewModel::class.java)) {
+                @Suppress("UNCHECKED_CAST")
+                return EditProfileViewModel(application, userRepository) as T
+            }
+            throw IllegalArgumentException("Unknown ViewModel class")
+        }
+    }
+
 }

@@ -6,9 +6,9 @@ import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.LazyRow
 import androidx.compose.foundation.lazy.items
-import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.automirrored.filled.ArrowBack
 import androidx.compose.material.icons.filled.*
 import androidx.compose.material3.*
 import androidx.compose.runtime.*
@@ -45,81 +45,83 @@ fun EstablishmentDetailsScreen(
 ) {
     val uiState by viewModel.uiState.collectAsState()
 
+    LaunchedEffect(uiState.establishment?.id) {
+        uiState.establishment?.id?.let { viewModel.getEstablishmentReviews() }
+    }
+    var selectedTab by remember { mutableIntStateOf(0) }
+    val tabs = listOf("Informações", "Avaliações")
+
     Scaffold(
         topBar = {
             TopAppBar(
                 title = { Text(uiState.establishment?.name ?: "Detalhes") },
                 navigationIcon = {
                     IconButton(onClick = onNavigateBack) {
-                        Icon(Icons.Filled.ArrowBack, contentDescription = "Voltar")
-                    }
-                },
-                actions = {
-                    uiState.establishment?.let {
-                        IconButton(onClick = { viewModel.toggleFavorite() }) {
-                            Icon(
-                                if (uiState.isFavorite) Icons.Filled.Favorite else Icons.Filled.FavoriteBorder,
-                                contentDescription = "Favoritar",
-                                tint = if (uiState.isFavorite) MaterialTheme.colorScheme.primary else LocalContentColor.current
-                            )
-                        }
+                        Icon(Icons.AutoMirrored.Filled.ArrowBack, contentDescription = "Voltar")
                     }
                 }
             )
         }
     ) { paddingValues ->
-        LazyColumn(
-            modifier = Modifier
-                .padding(paddingValues)
-                .fillMaxSize()
-        ) {
-            if (uiState.isLoading) {
-                item {
-                    Box(modifier = Modifier.fillParentMaxSize(), contentAlignment = Alignment.Center) {
+
+        Column(modifier = Modifier.padding(paddingValues)) {
+
+            // Tabs
+            TabRow(selectedTabIndex = selectedTab) {
+                tabs.forEachIndexed { index, title ->
+                    Tab(
+                        selected = selectedTab == index,
+                        onClick = { selectedTab = index },
+                        text = { Text(title) }
+                    )
+                }
+            }
+
+            when {
+                uiState.isLoading -> {
+                    Box(
+                        modifier = Modifier
+                            .fillMaxSize()
+                            .padding(16.dp),
+                        contentAlignment = Alignment.Center
+                    ) {
                         CircularProgressIndicator()
                     }
                 }
-            } else if (uiState.error != null) {
-                item {
-                    Box(modifier = Modifier.fillParentMaxSize(), contentAlignment = Alignment.Center) {
-                        Column(horizontalAlignment = Alignment.CenterHorizontally) {
-                            Text("Erro: ${uiState.error}", color = MaterialTheme.colorScheme.error)
-                            Spacer(Modifier.height(8.dp))
-                            Button(onClick = { viewModel.retryLoadDetails() }) {
-                                Text("Tentar Novamente")
+
+                uiState.establishment != null -> {
+                    val establishment = uiState.establishment!!
+
+                    when (selectedTab) {
+                        0 -> { // Informações
+                            uiState.establishment?.let { establishment ->
+                                LazyColumn(modifier = Modifier.fillMaxSize()) {
+                                    item { InfoSection(establishment, viewModel) }
+                                    establishment.description?.let { description ->
+                                        item { DescriptionSection(description) }
+                                    }
+                                    item {
+                                        MiniMapSection(
+                                            location = establishment.location,
+                                            name = establishment.name
+                                        )
+                                    }
+                                }
+                            }
+                        }
+
+                        1 -> { // Avaliações
+                            uiState.establishment?.let { establishment ->
+                                ReviewsSection(reviews = establishment.reviews)
                             }
                         }
                     }
                 }
-            } else if (uiState.establishment != null) {
-                val establishment = uiState.establishment!!
-
-
-                // Seção de Informações Básicas
-                item {
-                    InfoSection(establishment = establishment)
-                }
-
-                // Seção de Descrição (se houver)
-                establishment.description?.let { description ->
-                    item {
-                        DescriptionSection(description = description)
-                    }
-                }
-
-                              // Seção de Mini-Mapa
-                item {
-                    MiniMapSection(location = establishment.location, name = establishment.name)
-                }
-
-
-
-                // Espaço no final
-                item { Spacer(Modifier.height(16.dp)) }
             }
         }
     }
 }
+
 
 @Composable
 fun PhotosSection(photos: List<String>, establishmentName: String) {
@@ -156,33 +158,59 @@ fun PhotosSection(photos: List<String>, establishmentName: String) {
                 .background(MaterialTheme.colorScheme.surfaceVariant),
             contentAlignment = Alignment.Center
         ) {
-            Icon(Icons.Filled.ImageNotSupported, "Sem fotos disponíveis", tint = MaterialTheme.colorScheme.onSurfaceVariant)
+            Icon(
+                Icons.Filled.ImageNotSupported,
+                "Sem fotos disponíveis",
+                tint = MaterialTheme.colorScheme.onSurfaceVariant
+            )
         }
     }
 }
 
 @Composable
-fun InfoSection(establishment: EstablishmentDetails) {
+fun InfoSection(establishment: EstablishmentDetails, viewModel: EstablishmentDetailsViewModel) {
+    var averageRating by remember { mutableStateOf<Float?>(null) }
+
+    // Calculate the average rating asynchronously
+    LaunchedEffect(establishment.id) {
+        averageRating = viewModel.getAverageRating()
+    }
+
     Column(modifier = Modifier.padding(16.dp)) {
-        Text(establishment.name, style = MaterialTheme.typography.headlineSmall, fontWeight = FontWeight.Bold)
+        Text(
+            establishment.name,
+            style = MaterialTheme.typography.headlineSmall,
+            fontWeight = FontWeight.Bold
+        )
         Spacer(Modifier.height(8.dp))
 
         Row(verticalAlignment = Alignment.CenterVertically) {
-            Icon(Icons.Filled.Star, contentDescription = "Rating", tint = Color(0xFFFFC107)) // Cor de estrela
+            Icon(
+                Icons.Filled.Star,
+                contentDescription = "Rating",
+                tint = Color(0xFFFFC107)
+            )
             Spacer(Modifier.width(4.dp))
-            Text("${establishment.rating}", style = MaterialTheme.typography.bodyLarge)
+            Text(
+                text = averageRating?.let { String.format("%.1f", it) } ?: "Sem avaliações",
+                style = MaterialTheme.typography.bodyLarge
+            )
         }
         Spacer(Modifier.height(8.dp))
 
         InfoRow(icon = Icons.Filled.LocationOn, text = establishment.address)
-
     }
 }
+
 
 @Composable
 fun DescriptionSection(description: String) {
     Column(modifier = Modifier.padding(horizontal = 16.dp, vertical = 8.dp)) {
-        Text("Sobre", style = MaterialTheme.typography.titleMedium, fontWeight = FontWeight.SemiBold)
+        Text(
+            "Sobre",
+            style = MaterialTheme.typography.titleMedium,
+            fontWeight = FontWeight.SemiBold
+        )
         Spacer(Modifier.height(4.dp))
         Text(description, style = MaterialTheme.typography.bodyMedium)
     }
@@ -191,7 +219,11 @@ fun DescriptionSection(description: String) {
 @Composable
 fun OpeningHoursSection(openingHours: List<String>) {
     Column(modifier = Modifier.padding(horizontal = 16.dp, vertical = 8.dp)) {
-        Text("Horário", style = MaterialTheme.typography.titleMedium, fontWeight = FontWeight.SemiBold)
+        Text(
+            "Horário",
+            style = MaterialTheme.typography.titleMedium,
+            fontWeight = FontWeight.SemiBold
+        )
         Spacer(Modifier.height(4.dp))
         openingHours.forEach { hour ->
             Text("• $hour", style = MaterialTheme.typography.bodyMedium)
@@ -207,7 +239,11 @@ fun MiniMapSection(location: LatLng, name: String) {
     val markerState = rememberMarkerState(position = location)
 
     Column(modifier = Modifier.padding(horizontal = 16.dp, vertical = 8.dp)) {
-        Text("Localização", style = MaterialTheme.typography.titleMedium, fontWeight = FontWeight.SemiBold)
+        Text(
+            "Localização",
+            style = MaterialTheme.typography.titleMedium,
+            fontWeight = FontWeight.SemiBold
+        )
         Spacer(Modifier.height(8.dp))
         GoogleMap(
             modifier = Modifier
@@ -264,10 +300,18 @@ fun ReviewCard(review: ReviewUiModel) {
     ) {
         Column(Modifier.padding(12.dp)) {
             Row(verticalAlignment = Alignment.CenterVertically) {
-                                Spacer(Modifier.width(8.dp))
+                Spacer(Modifier.width(8.dp))
                 Column {
-                    Text(review.userName, style = MaterialTheme.typography.titleSmall, fontWeight = FontWeight.SemiBold)
-                    Text(review.date, style = MaterialTheme.typography.bodySmall, color = MaterialTheme.colorScheme.onSurfaceVariant)
+                    Text(
+                        review.userName,
+                        style = MaterialTheme.typography.titleSmall,
+                        fontWeight = FontWeight.SemiBold
+                    )
+                    Text(
+                        review.date,
+                        style = MaterialTheme.typography.bodySmall,
+                        color = MaterialTheme.colorScheme.onSurfaceVariant
+                    )
                 }
             }
             Spacer(Modifier.height(8.dp))
@@ -288,17 +332,31 @@ fun ReviewCard(review: ReviewUiModel) {
                 maxLines = 3,
                 overflow = TextOverflow.Ellipsis
             )
+            if (review.photos.isNotEmpty()) {
+                Spacer(Modifier.height(8.dp))
+                PhotosSection(photos = review.photos, establishmentName = review.userName)
+            }
         }
     }
 }
 
 @Composable
-fun InfoRow(icon: ImageVector, text: String, isClickable: Boolean = false, onClick: (() -> Unit)? = null) {
+fun InfoRow(
+    icon: ImageVector,
+    text: String,
+    isClickable: Boolean = false,
+    onClick: (() -> Unit)? = null
+) {
     Row(
         verticalAlignment = Alignment.CenterVertically,
-        modifier = if(isClickable && onClick != null) Modifier.clickable(onClick = onClick) else Modifier
+        modifier = if (isClickable && onClick != null) Modifier.clickable(onClick = onClick) else Modifier
     ) {
-        Icon(icon, contentDescription = null, tint = MaterialTheme.colorScheme.primary, modifier = Modifier.size(20.dp))
+        Icon(
+            icon,
+            contentDescription = null,
+            tint = MaterialTheme.colorScheme.primary,
+            modifier = Modifier.size(20.dp)
+        )
         Spacer(Modifier.width(8.dp))
         Text(text, style = MaterialTheme.typography.bodyMedium)
     }
