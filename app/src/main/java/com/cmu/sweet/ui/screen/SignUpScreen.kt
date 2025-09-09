@@ -1,6 +1,7 @@
 package com.cmu.sweet.ui.screen
 
 import android.app.Application
+import androidx.compose.foundation.Image
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.text.KeyboardOptions
 import androidx.compose.material3.*
@@ -8,11 +9,12 @@ import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.platform.LocalContext
+import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.text.input.KeyboardType
 import androidx.compose.ui.text.input.PasswordVisualTransformation
 import androidx.compose.ui.unit.dp
-import androidx.lifecycle.ViewModelProvider
 import androidx.lifecycle.viewmodel.compose.viewModel
+import com.cmu.sweet.R
 import com.cmu.sweet.data.local.SweetDatabase
 import com.cmu.sweet.view_model.AuthViewModel
 import com.google.firebase.auth.FirebaseAuth
@@ -70,6 +72,13 @@ fun SignUpScreen(
             horizontalAlignment = Alignment.CenterHorizontally,
             verticalArrangement = Arrangement.Center
         ) {
+            Image(
+                painter = painterResource(id = R.drawable.cake_48px),
+                contentDescription = "SweetMe Logo",
+                modifier = Modifier.size(200.dp)
+            )
+            Spacer(modifier = Modifier.height(26.dp))
+
             Text("Create your SweetMe account", style = MaterialTheme.typography.titleLarge)
             Spacer(modifier = Modifier.height(16.dp))
 
@@ -79,7 +88,14 @@ fun SignUpScreen(
                 label = { Text("Name") },
                 modifier = Modifier.fillMaxWidth(),
                 isError = state.nameError != null,
-                supportingText = { state.nameError?.let { Text(it, color = MaterialTheme.colorScheme.error) } }
+                supportingText = {
+                    state.nameError?.let {
+                        Text(
+                            it,
+                            color = MaterialTheme.colorScheme.error
+                        )
+                    }
+                }
             )
             Spacer(modifier = Modifier.height(8.dp))
 
@@ -90,7 +106,14 @@ fun SignUpScreen(
                 keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Email),
                 modifier = Modifier.fillMaxWidth(),
                 isError = state.emailError != null,
-                supportingText = { state.emailError?.let { Text(it, color = MaterialTheme.colorScheme.error) } }
+                supportingText = {
+                    state.emailError?.let {
+                        Text(
+                            it,
+                            color = MaterialTheme.colorScheme.error
+                        )
+                    }
+                }
             )
             Spacer(modifier = Modifier.height(8.dp))
 
@@ -102,7 +125,14 @@ fun SignUpScreen(
                 keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Password),
                 modifier = Modifier.fillMaxWidth(),
                 isError = state.passwordError != null,
-                supportingText = { state.passwordError?.let { Text(it, color = MaterialTheme.colorScheme.error) } }
+                supportingText = {
+                    state.passwordError?.let {
+                        Text(
+                            it,
+                            color = MaterialTheme.colorScheme.error
+                        )
+                    }
+                }
             )
             Spacer(modifier = Modifier.height(8.dp))
 
@@ -114,14 +144,24 @@ fun SignUpScreen(
                 keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Password),
                 modifier = Modifier.fillMaxWidth(),
                 isError = state.confirmPasswordError != null,
-                supportingText = { state.confirmPasswordError?.let { Text(it, color = MaterialTheme.colorScheme.error) } }
+                supportingText = {
+                    state.confirmPasswordError?.let {
+                        Text(
+                            it,
+                            color = MaterialTheme.colorScheme.error
+                        )
+                    }
+                }
             )
 
             // Capture the error message in a local variable for the Text display as well
             val currentGeneralError = state.generalRegistrationError
             if (currentGeneralError != null && snackbarHostState.currentSnackbarData == null) {
                 Spacer(modifier = Modifier.height(8.dp))
-                Text(currentGeneralError, color = MaterialTheme.colorScheme.error) // Use the local variable
+                Text(
+                    currentGeneralError,
+                    color = MaterialTheme.colorScheme.error
+                ) // Use the local variable
             }
 
 

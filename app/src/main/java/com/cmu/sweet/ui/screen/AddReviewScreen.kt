@@ -14,7 +14,6 @@ import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.filled.ArrowBack
 import androidx.compose.material.icons.filled.Star
-import androidx.compose.material.icons.outlined.Star
 import androidx.compose.material3.*
 import androidx.compose.runtime.*
 import androidx.compose.runtime.livedata.observeAsState
@@ -32,6 +31,7 @@ import com.cmu.sweet.data.local.SweetDatabase
 import com.cmu.sweet.data.repository.EstablishmentRepository
 import com.cmu.sweet.data.repository.ReviewRepository
 import com.cmu.sweet.view_model.AddReviewViewModel
+import com.google.android.gms.location.LocationServices
 import com.google.firebase.firestore.FirebaseFirestore
 import timber.log.Timber
 
@@ -39,27 +39,69 @@ import timber.log.Timber
 @Composable
 fun AddReviewScreen(
     navController: NavController,
-    establishmentId: String?,
-) {
+    establishmentId: String?)
+{
     val context = LocalContext.current
     val application = context.applicationContext as Application
 
     val db = SweetDatabase.getInstance(application)
     val establishmentDao = db.establishmentDao()
     val reviewDao = db.reviewDao()
+    val userDao = db.userDao()
 
     val firestore = FirebaseFirestore.getInstance()
 
     val establishmentRepo = EstablishmentRepository(firestore, establishmentDao)
     val reviewRepo = ReviewRepository(firestore, reviewDao)
+
     val viewModel: AddReviewViewModel = viewModel(
         factory = AddReviewViewModel.Factory(application, establishmentRepo, reviewRepo)
     )
+    val uiState by viewModel.uiState.collectAsState()
+
+    val fusedLocationClient = LocationServices.getFusedLocationProviderClient(LocalContext.current)
+
+    val reviewAdded by viewModel.reviewAdded.observeAsState()
+
+    LaunchedEffect(reviewAdded) {
+        if (reviewAdded == true) {
+            navController.popBackStack()
+        }
+    }
+
+    LaunchedEffect(Unit) {
+        viewModel.updateUserLocation(fusedLocationClient)
+    }
+
+    val userLocation = uiState.userLocation
+
+    LaunchedEffect(userLocation) {
+        Timber.d("User location in AddReviewScreen: $userLocation")
+    }
+
 
     establishmentId?.let {
         LaunchedEffect(it) {
             viewModel.loadEstablishment(it)
         }
+    }
+
+    if (userLocation == null) {
+        Text("Não foi possível obter a localização do utilizador.")
+        return
+    }
+
+    if (uiState.showCannotReviewDialog) {
+        AlertDialog(
+            onDismissRequest = { viewModel.dismissCannotReviewDialog() },
+            title = { Text("Não pode avaliar") },
+            text = { Text("Você só pode avaliar este restaurante estando a menos de 50 metros e após 30 minutos da última avaliação.") },
+            confirmButton = {
+                TextButton(onClick = { viewModel.dismissCannotReviewDialog() }) {
+                    Text("OK")
+                }
+            }
+        )
     }
 
 
@@ -218,13 +260,13 @@ fun AddReviewScreen(
                         photoUris,
                         priceRating
                     )
-                    navController.popBackStack()
                 },
                 enabled = !loading && rating > 0 && comment.isNotBlank() && establishment != null,
                 modifier = Modifier.fillMaxWidth()
             ) {
                 Text(if (loading) "Submitting..." else "Submit Review")
             }
+
         }
     }
 }

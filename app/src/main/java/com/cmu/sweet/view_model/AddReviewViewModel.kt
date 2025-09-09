@@ -14,11 +14,14 @@ import com.cmu.sweet.data.local.entities.Review
 import com.cmu.sweet.data.repository.EstablishmentRepository
 import com.cmu.sweet.data.repository.ReviewRepository
 import com.cmu.sweet.ui.state.AddReviewUiState
+import com.google.android.gms.location.FusedLocationProviderClient
+import com.google.android.gms.maps.model.LatLng
 import com.google.firebase.auth.FirebaseAuth
 import com.google.firebase.storage.FirebaseStorage
 import com.google.firebase.storage.StorageReference
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
+import kotlinx.coroutines.flow.update
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.tasks.await
 import timber.log.Timber
@@ -42,6 +45,10 @@ class AddReviewViewModel(
     private val _error = MutableLiveData<String?>()
     val error: LiveData<String?> = _error
 
+    private val _reviewAdded = MutableLiveData<Boolean>()
+    val reviewAdded: LiveData<Boolean> = _reviewAdded
+
+
 
     fun loadEstablishment(establishmentId: String) {
         viewModelScope.launch {
@@ -56,18 +63,49 @@ class AddReviewViewModel(
         }
     }
 
+    suspend fun fetchUserLocation(
+        fusedLocationClient: FusedLocationProviderClient,
+    ): Result<LatLng> {
+        return try {
+            val location = fusedLocationClient.lastLocation.await()
+            if (location != null) {
+                Result.success(LatLng(location.latitude, location.longitude))
+            } else {
+                Result.failure(Exception("Could not get last known location"))
+            }
+        } catch (e: SecurityException) {
+            Timber.tag("LocationHelper").e(e, "SecurityException fetching location")
+            Result.failure(Exception("Location permission revoked or absent"))
+        } catch (e: Exception) {
+            Timber.tag("LocationHelper").e(e, "Error fetching location")
+            Result.failure(Exception("Error fetching location: ${e.message}"))
+        }
+    }
+
+    fun updateUserLocation(fusedLocationClient: FusedLocationProviderClient) {
+        viewModelScope.launch {
+            val result = fetchUserLocation(fusedLocationClient)
+            result.onSuccess { latLng ->
+                _uiState.update { it.copy(userLocation = latLng) }
+                Timber.d("User location updated in uiState: $latLng")
+            }.onFailure { e ->
+                Timber.e(e, "Failed to fetch user location")
+                _uiState.update { it.copy(locationError = e.message) }
+            }
+        }
+    }
+
 
     fun addReview(
         rating: Int,
         comment: String,
         photos: List<Uri>,
         priceRating: Int
-    ) {
-
+    ) : Boolean {
         val state = _uiState.value
         val est = _establishment.value ?: run {
             _error.value = "Establishment not loaded"
-            return
+            return false
         }
 
         if (rating <= 0 || comment.isBlank()) {
@@ -75,19 +113,41 @@ class AddReviewViewModel(
                 isSubmitting = false,
                 errorMessage = "Preencha todos os campos obrigatórios."
             )
-            return
+            return false
         }
 
         val addedBy = FirebaseAuth.getInstance().currentUser?.uid
         if (addedBy == null) {
             _uiState.value =
                 state.copy(isSubmitting = false, errorMessage = "Usuário não autenticado.")
-            return
+            return false
         }
 
+        val userLocation = _uiState.value.userLocation
+        if (userLocation == null) {
+            _error.value = "Não foi possível obter a localização do utilizador."
+            return false
+        }
 
         viewModelScope.launch {
             _loading.value = true
+
+            val canReview = reviewRepo.canUserReview(
+                establishmentId = est.id,
+                userLocation = userLocation,
+                userId = addedBy
+            )
+
+            if (!canReview) {
+                _loading.value = false
+                _uiState.value = state.copy(
+                    isSubmitting = false,
+                    errorMessage = null,
+                    showCannotReviewDialog = true // trigger dialog
+                )
+                return@launch
+            }
+
             val storageRootRef = FirebaseStorage.getInstance(
                 "gs://bionic-slate-470122-c5.firebasestorage.app"
             ).reference
@@ -113,9 +173,12 @@ class AddReviewViewModel(
                 _error.value = result.exceptionOrNull()?.message
             } else {
                 _uiState.value = state.copy(isSubmitting = false, errorMessage = null)
+                _reviewAdded.postValue(true) // ✅ signal success
             }
         }
+        return true
     }
+
 
     private suspend fun uploadPhotoRobust(
         app: Application,
@@ -137,6 +200,10 @@ class AddReviewViewModel(
             Timber.w(e, "Upload failed")
             null
         }
+    }
+
+    fun dismissCannotReviewDialog() {
+        _uiState.value = _uiState.value.copy(showCannotReviewDialog = false)
     }
 
     class Factory(

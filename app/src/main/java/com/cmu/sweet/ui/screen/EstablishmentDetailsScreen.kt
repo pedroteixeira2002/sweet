@@ -29,6 +29,7 @@ import com.cmu.sweet.R // Se tiver drawables de placeholder
 import com.cmu.sweet.ui.state.EstablishmentDetails
 import com.cmu.sweet.ui.state.ReviewUiModel
 import com.cmu.sweet.view_model.EstablishmentDetailsViewModel
+import com.google.android.gms.location.LocationServices
 import com.google.android.gms.maps.model.CameraPosition
 import com.google.android.gms.maps.model.LatLng
 import com.google.maps.android.compose.GoogleMap
@@ -41,15 +42,16 @@ import com.google.maps.android.compose.rememberMarkerState
 @Composable
 fun EstablishmentDetailsScreen(
     onNavigateBack: () -> Unit,
+    onNavigateToAddReview: (establishmentId: String) -> Unit,
     viewModel: EstablishmentDetailsViewModel
 ) {
     val uiState by viewModel.uiState.collectAsState()
+    var selectedTab by remember { mutableIntStateOf(0) }
+    val tabs = listOf("Informações", "Avaliações")
 
     LaunchedEffect(uiState.establishment?.id) {
         uiState.establishment?.id?.let { viewModel.getEstablishmentReviews() }
     }
-    var selectedTab by remember { mutableIntStateOf(0) }
-    val tabs = listOf("Informações", "Avaliações")
 
     Scaffold(
         topBar = {
@@ -94,26 +96,36 @@ fun EstablishmentDetailsScreen(
 
                     when (selectedTab) {
                         0 -> { // Informações
-                            uiState.establishment?.let { establishment ->
-                                LazyColumn(modifier = Modifier.fillMaxSize()) {
-                                    item { InfoSection(establishment, viewModel) }
-                                    establishment.description?.let { description ->
-                                        item { DescriptionSection(description) }
-                                    }
-                                    item {
-                                        MiniMapSection(
-                                            location = establishment.location,
-                                            name = establishment.name
-                                        )
+                            LazyColumn(modifier = Modifier.fillMaxSize()) {
+                                item { InfoSection(establishment, viewModel) }
+                                establishment.description?.let { description ->
+                                    item { DescriptionSection(description) }
+                                }
+                                item {
+                                    MiniMapSection(
+                                        location = establishment.location,
+                                        name = establishment.name
+                                    )
+                                }
+
+                                // Add Review Button
+                                item {
+                                    Button(
+                                        onClick = {
+                                            onNavigateToAddReview(establishment.id)
+                                        },
+                                        modifier = Modifier
+                                            .fillMaxWidth()
+                                            .padding(16.dp)
+                                    ) {
+                                        Text("Adicionar Avaliação")
                                     }
                                 }
                             }
                         }
 
-                        1 -> { // Avaliações
-                            uiState.establishment?.let { establishment ->
-                                ReviewsSection(reviews = establishment.reviews)
-                            }
+                        1 -> {
+                            ReviewsSection(reviews = establishment.reviews)
                         }
                     }
                 }
@@ -121,6 +133,7 @@ fun EstablishmentDetailsScreen(
         }
     }
 }
+
 
 
 @Composable
@@ -217,24 +230,9 @@ fun DescriptionSection(description: String) {
 }
 
 @Composable
-fun OpeningHoursSection(openingHours: List<String>) {
-    Column(modifier = Modifier.padding(horizontal = 16.dp, vertical = 8.dp)) {
-        Text(
-            "Horário",
-            style = MaterialTheme.typography.titleMedium,
-            fontWeight = FontWeight.SemiBold
-        )
-        Spacer(Modifier.height(4.dp))
-        openingHours.forEach { hour ->
-            Text("• $hour", style = MaterialTheme.typography.bodyMedium)
-        }
-    }
-}
-
-@Composable
 fun MiniMapSection(location: LatLng, name: String) {
     val cameraPositionState = rememberCameraPositionState {
-        position = CameraPosition.fromLatLngZoom(location, 15f) // Zoom mais próximo para detalhes
+        position = CameraPosition.fromLatLngZoom(location, 15f)
     }
     val markerState = rememberMarkerState(position = location)
 

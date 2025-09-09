@@ -19,7 +19,6 @@ import androidx.compose.foundation.layout.*
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.Add
 import androidx.compose.material.icons.filled.Close
-import androidx.compose.material.icons.filled.RateReview
 import androidx.compose.material.icons.filled.Store
 import androidx.compose.material3.*
 import androidx.compose.runtime.*
@@ -56,7 +55,6 @@ fun HomeScreen(
     homeViewModel: HomeViewModel = viewModel(),
     onNavigateToDetails: (String) -> Unit,
     onNavigateToAddEstablishment: () -> Unit,
-    onNavigateToAddReview: (String?) -> Unit,
     onNavigateToLogin: () -> Unit,
     onNavigateToEditProfile: (String) -> Unit,
     onNavigateToSettings: () -> Unit
@@ -137,16 +135,6 @@ fun HomeScreen(
                     horizontalAlignment = Alignment.End,
                     verticalArrangement = Arrangement.spacedBy(16.dp)
                 ) {
-                    AnimatedVisibility(
-                        visible = isFabExpanded,
-                        enter = slideInVertically(initialOffsetY = { it / 2 }) + fadeIn(),
-                        exit = slideOutVertically(targetOffsetY = { it / 2 }) + fadeOut()
-                    ) {
-                        MiniFabItem(
-                            icon = Icons.Filled.RateReview, label = "Adicionar Review",
-                            onClick = { isFabExpanded = false; onNavigateToAddReview(null) }
-                        )
-                    }
                     AnimatedVisibility(
                         visible = isFabExpanded,
                         enter = slideInVertically(initialOffsetY = { it / 2 }) + fadeIn(),

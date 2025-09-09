@@ -16,6 +16,7 @@ import androidx.compose.material3.CircularProgressIndicator
 import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Slider
+import androidx.compose.material3.SliderDefaults
 import androidx.compose.material3.Snackbar
 import androidx.compose.material3.Text
 import androidx.compose.material3.rememberBottomSheetScaffoldState
@@ -29,6 +30,7 @@ import androidx.compose.runtime.rememberCoroutineScope
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.unit.dp
 import com.cmu.sweet.ui.components.AddressSearchBar
 import com.cmu.sweet.ui.components.EstablishmentCard
@@ -87,7 +89,12 @@ fun HomeSectionContent(
                     value = searchRadius,
                     onValueChange = { searchRadius = it },
                     valueRange = 250f..15000f,
-                    steps = 60
+                    steps = 60,
+                    colors = SliderDefaults.colors(
+                        thumbColor = Color.White,
+                        activeTrackColor = MaterialTheme.colorScheme.primary,
+                        inactiveTrackColor = Color.Gray.copy(alpha = 0.3f)
+                    )
                 )
 
                 Spacer(Modifier.height(8.dp))
@@ -100,7 +107,7 @@ fun HomeSectionContent(
                     }
 
                     uiState.establishments.isEmpty() -> {
-                        Box(Modifier.fillMaxWidth(), contentAlignment = Alignment.Center) {
+                        Box(Modifier.fillMaxWidth(), contentAlignment = Alignment.Center,) {
                             Text("Nenhum estabelecimento encontrado por perto.")
                         }
                     }

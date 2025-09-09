@@ -1,8 +1,10 @@
 package com.cmu.sweet.ui.screen
 
 import android.app.Application
+import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.rememberScrollState
+import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.foundation.verticalScroll
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.filled.ExitToApp
@@ -174,14 +176,48 @@ fun ProfileContent(
         if (reviews.isNotEmpty()) {
             Text("Minhas Avaliações", style = MaterialTheme.typography.titleMedium)
             reviews.forEach { review ->
-                Text("- $review", style = MaterialTheme.typography.bodySmall)
+                Card(
+                    modifier = Modifier
+                        .fillMaxWidth()
+                        .padding(vertical = 4.dp),
+                    shape = RoundedCornerShape(12.dp),
+                    colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.surfaceVariant),
+                    elevation = CardDefaults.cardElevation(defaultElevation = 4.dp)
+                ) {
+                    Column(modifier = Modifier.padding(12.dp)) {
+                        Text("Rating: ${review.rating} ⭐", style = MaterialTheme.typography.bodyMedium)
+                        review.comment.takeIf { it.isNotBlank() }?.let {
+                            Spacer(Modifier.height(4.dp))
+                            Text(it, style = MaterialTheme.typography.bodySmall)
+                        }
+                        Spacer(Modifier.height(4.dp))
+                        Text("Price: ${"$".repeat(review.priceRating)}", style = MaterialTheme.typography.bodySmall)
+                    }
+                }
             }
         }
 
+        // Establishments
         if (establishments.isNotEmpty()) {
             Text("Meus Sítios", style = MaterialTheme.typography.titleMedium)
             establishments.forEach { place ->
-                Text("- $place", style = MaterialTheme.typography.bodySmall)
+                Card(
+                    modifier = Modifier
+                        .fillMaxWidth()
+                        .padding(vertical = 4.dp)
+                        .clickable { /* maybe navigate to establishment */ },
+                    shape = RoundedCornerShape(12.dp),
+                    colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.surfaceVariant),
+                    elevation = CardDefaults.cardElevation(defaultElevation = 4.dp)
+                ) {
+                    Column(modifier = Modifier.padding(12.dp)) {
+                        Text(place.name, style = MaterialTheme.typography.bodyLarge, fontWeight = FontWeight.Bold)
+                        place.address.let {
+                            Spacer(Modifier.height(2.dp))
+                            Text(it, style = MaterialTheme.typography.bodySmall)
+                        }
+                    }
+                }
             }
         }
 

@@ -3,7 +3,6 @@ package com.cmu.sweet.ui.navigation
 import android.app.Application
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.remember
-import androidx.compose.ui.Modifier
 import androidx.compose.ui.platform.LocalContext
 import androidx.lifecycle.viewmodel.compose.viewModel
 import androidx.navigation.NavType
@@ -76,10 +75,12 @@ fun AppNavGraph(
     val userRepository = UserRepository(firestore, userDao, firebaseAuth)
     val establishmentRepository = EstablishmentRepository(firestore, establishmentDao)
     val lightSensorViewModel = remember { LightSensorViewModel(context) }
+    val userId = userRepository.getCurrentUser()
 
 
 
-    NavHost(navController = navController, startDestination = Screen.Splash.route) {
+
+    NavHost(navController = navController, startDestination = if (userId == null) "welcome" else "home") {
 
         composable(Screen.Splash.route) {
             SplashScreen(navController = navController)
@@ -123,9 +124,6 @@ fun AppNavGraph(
                     navController.navigate(Screen.EstablishmentDetails.createRoute(establishmentId))
                 },
                 onNavigateToAddEstablishment = { navController.navigate(Screen.AddEstablishment.route) },
-                onNavigateToAddReview = { establishmentId ->
-                    navController.navigate(Screen.AddReview.createRoute(establishmentId))
-                },
                 onNavigateToLogin = {
                     navController.navigate(Screen.Login.route) {
                         popUpTo(navController.graph.startDestinationId) {
@@ -146,8 +144,13 @@ fun AppNavGraph(
             route = "establishmentDetails/{establishmentId}",
             arguments = listOf(navArgument("establishmentId") { type = NavType.StringType })
         ) { navBackStackEntry ->
+            val establishmentId = navBackStackEntry.arguments?.getString("establishmentId")
+
             EstablishmentDetailsScreen(
                 onNavigateBack = { navController.popBackStack() },
+                onNavigateToAddReview = { establishmentId ->
+                    navController.navigate(Screen.AddReview.createRoute(establishmentId))
+                },
                 viewModel = viewModel<EstablishmentDetailsViewModel>(
                     factory = EstablishmentDetailsViewModel.Factory(
                         context.applicationContext as Application,
@@ -170,7 +173,7 @@ fun AppNavGraph(
             })
         ) { backStackEntry ->
             val establishmentId = backStackEntry.arguments?.getString("establishmentId")
-            AddReviewScreen(navController = navController, establishmentId = "40tmGYETnTMtuXTHfVHj")
+            AddReviewScreen(navController, establishmentId)
         }
 
         composable(

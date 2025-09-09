@@ -2,7 +2,6 @@ package com.cmu.sweet.ui.theme
 
 import androidx.compose.foundation.isSystemInDarkTheme
 import androidx.compose.material3.MaterialTheme
-import androidx.compose.material3.Shapes
 import androidx.compose.material3.darkColorScheme
 import androidx.compose.material3.lightColorScheme
 import androidx.compose.runtime.Composable
@@ -17,6 +16,7 @@ val LightColors = lightColorScheme(
     onBackground = DarkChocolate,
     surface = AlmondMilk,
     onSurface = DarkChocolate,
+    surfaceVariant = Color.White,
     error = MutedRed,
     onError = Color.White
 )
@@ -30,6 +30,7 @@ val DarkColors = darkColorScheme(
     onBackground = WarmWhite,
     surface = TaupeGray,
     onSurface = WarmWhite,
+    surfaceVariant = Color.Black,
     error = MutedRed,
     onError = Color.Black
 )

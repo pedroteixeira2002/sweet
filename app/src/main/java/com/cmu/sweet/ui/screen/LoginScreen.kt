@@ -1,10 +1,14 @@
 package com.cmu.sweet.ui.screen
 
+import androidx.compose.foundation.Image
 import androidx.compose.foundation.layout.*
 import androidx.compose.material3.*
 import androidx.compose.runtime.*
+import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.unit.dp
+import com.cmu.sweet.R
 import com.google.firebase.auth.FirebaseAuth
 
 @Composable
@@ -20,6 +24,13 @@ fun LoginScreen(onLoginSuccess: () -> Unit) {
             .padding(24.dp),
         verticalArrangement = Arrangement.Center
     ) {
+        Image(
+            painter = painterResource(id = R.drawable.cake_48px),
+            contentDescription = "SweetMe Logo",
+            modifier = Modifier.size(150.dp),
+            alignment = Alignment.Center
+        )
+
         Text("SweetMe Login", style = MaterialTheme.typography.headlineMedium)
         Spacer(Modifier.height(16.dp))
 
