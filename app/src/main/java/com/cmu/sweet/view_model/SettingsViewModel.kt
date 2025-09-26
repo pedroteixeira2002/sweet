@@ -19,7 +19,6 @@ class SettingsViewModel(application: Application) : AndroidViewModel(application
     val selectedLanguage: StateFlow<String> = _selectedLanguage.asStateFlow()
 
     init {
-        // Collect initial values from DataStore
         viewModelScope.launch {
             settingsDataStore.isDarkModeFlow.collect {
                 _isDarkMode.value = it

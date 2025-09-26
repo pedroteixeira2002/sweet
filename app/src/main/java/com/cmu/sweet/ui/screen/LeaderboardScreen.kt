@@ -36,7 +36,6 @@ fun LeaderboardScreen(
             .fillMaxSize()
             .padding(16.dp)
     ) {
-        // Título da tela
         Text(
             text = "Ranking de Restaurantes",
             style = MaterialTheme.typography.headlineMedium,
@@ -71,7 +70,6 @@ fun EstablishmentCard(
             modifier = Modifier.padding(16.dp),
             verticalAlignment = Alignment.CenterVertically
         ) {
-            // Placeholder para imagem do estabelecimento
             Box(
                 modifier = Modifier
                     .size(64.dp)

@@ -6,19 +6,13 @@ import androidx.lifecycle.AndroidViewModel
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.ViewModelProvider
 import androidx.lifecycle.viewModelScope
-import androidx.media3.common.util.Log
 import com.cmu.sweet.data.local.entities.Establishment
 import com.cmu.sweet.data.repository.EstablishmentRepository
 import com.cmu.sweet.ui.state.AddEstablishmentUiState
 import com.cmu.sweet.utils.getLatLngFromAddress
-import com.google.android.libraries.places.api.model.AutocompletePrediction
-import com.google.android.libraries.places.api.model.AutocompleteSessionToken
-import com.google.android.libraries.places.api.net.FindAutocompletePredictionsRequest
-import com.google.android.libraries.places.api.net.PlacesClient
 import com.google.firebase.auth.FirebaseAuth
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
-import kotlinx.coroutines.flow.update
 import kotlinx.coroutines.launch
 
 class AddEstablishmentViewModel(
@@ -27,7 +21,6 @@ class AddEstablishmentViewModel(
 ) : AndroidViewModel(application) {
 
     private val _uiState = MutableStateFlow(AddEstablishmentUiState())
-    private lateinit var placesClient: PlacesClient
     val uiState: StateFlow<AddEstablishmentUiState> = _uiState
 
     fun onNameChange(newName: String) {
@@ -101,29 +94,6 @@ class AddEstablishmentViewModel(
 
     fun clearSuccess() {
         _uiState.value = _uiState.value.copy(success = false)
-    }
-    fun fetchAddressSuggestions(query: String, onResult: (List<AutocompletePrediction>) -> Unit) {
-        if (query.isBlank()) {
-            onResult(emptyList())
-            return
-        }
-
-        val token = AutocompleteSessionToken.newInstance() // Optional: for billing and session management
-
-        val request = FindAutocompletePredictionsRequest.builder()
-            .setSessionToken(token)
-            .setQuery(query)
-            .setCountries("PT") // Optional: Bias to a specific country (e.g., Portugal)
-            // You can also set other options like location bias, types, etc.
-            .build()
-
-        placesClient.findAutocompletePredictions(request).addOnSuccessListener { response ->
-            onResult(response.autocompletePredictions)
-        }.addOnFailureListener { exception ->
-            Log.e("AddEstablishmentVM", "Autocomplete prediction fetch error", exception)
-            _uiState.update { it.copy(errorMessage = "Failed to fetch address suggestions.") }
-            onResult(emptyList()) // Return empty list on failure
-        }
     }
 
     class Factory(

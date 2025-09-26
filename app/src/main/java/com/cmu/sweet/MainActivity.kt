@@ -44,7 +44,7 @@ class MainActivity : ComponentActivity() {
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
         if (!Places.isInitialized()) {
-            Places.initialize(applicationContext, "AIzaSyAj5euiceTomJVILEJkuTTLgO43LnaDcCc")
+            Places.initialize(applicationContext, "AIzaSyCnSl6nLr6YtNtir0Tz_ehcLo-BIHrNtPE")
         }
         setContent {
 

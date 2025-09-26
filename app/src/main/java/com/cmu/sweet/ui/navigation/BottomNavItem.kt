@@ -12,7 +12,6 @@ sealed class BottomNavItem(val route: String, val icon: ImageVector, val label: 
     object Leaderboard : BottomNavItem("leaderboard_section", Icons.Filled.Leaderboard, "Ranking")
     object Profile : BottomNavItem("profile_section", Icons.Filled.Person, "Perfil")
 
-    // Companion object to hold the Saver
     companion object {
         /**
          * Custom Saver for BottomNavItem.
@@ -21,11 +20,9 @@ sealed class BottomNavItem(val route: String, val icon: ImageVector, val label: 
          */
         val Saver: Saver<BottomNavItem, String> = Saver(
             save = { bottomNavItem ->
-                // Save the unique 'route' string associated with the item
                 bottomNavItem.route
             },
             restore = { routeString ->
-                // Restore the specific BottomNavItem object based on the saved route string
                 when (routeString) {
                     Home.route -> Home
                     Leaderboard.route -> Leaderboard

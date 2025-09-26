@@ -30,7 +30,6 @@ class LightSensorViewModel(context: Context) : ViewModel(), SensorEventListener 
     }
 
     override fun onAccuracyChanged(sensor: Sensor?, accuracy: Int) {
-        // Not used, but required by interface
     }
 
     override fun onCleared() {

@@ -8,15 +8,11 @@ import androidx.lifecycle.ViewModelProvider
 import androidx.lifecycle.createSavedStateHandle
 import androidx.lifecycle.viewModelScope
 import androidx.lifecycle.viewmodel.CreationExtras
-import com.cmu.sweet.data.local.SweetDatabase
 import com.cmu.sweet.data.repository.EstablishmentRepository
-import com.cmu.sweet.data.repository.ReviewRepository
 import com.cmu.sweet.ui.state.EstablishmentDetails
 import com.cmu.sweet.ui.state.EstablishmentDetailsUiState
 import com.cmu.sweet.ui.state.ReviewUiModel
-import com.google.android.gms.location.FusedLocationProviderClient
 import com.google.android.gms.maps.model.LatLng
-import com.google.firebase.firestore.FirebaseFirestore
 import com.google.firebase.storage.FirebaseStorage
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
@@ -24,7 +20,6 @@ import kotlinx.coroutines.flow.asStateFlow
 import kotlinx.coroutines.flow.update
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.tasks.await
-import timber.log.Timber
 
 class EstablishmentDetailsViewModel(
     savedStateHandle: SavedStateHandle,

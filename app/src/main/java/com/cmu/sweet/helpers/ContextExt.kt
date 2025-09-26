@@ -6,7 +6,7 @@ import android.Manifest
 import androidx.core.content.ContextCompat
 
 
-fun Context.hasLocationPermission(): Boolean { //extension
+fun Context.hasLocationPermission(): Boolean {
     return ContextCompat.checkSelfPermission(
         this,
         Manifest.permission.ACCESS_COARSE_LOCATION

@@ -116,7 +116,7 @@ fun AddReviewScreen(
     var photoUris by remember { mutableStateOf<List<Uri>>(emptyList()) }
 
     val photoPickerLauncher = rememberLauncherForActivityResult(
-        contract = ActivityResultContracts.OpenMultipleDocuments(), // safer than GetMultipleContents
+        contract = ActivityResultContracts.OpenMultipleDocuments(),
     ) { uris ->
         if (uris.isNotEmpty()) {
             val grantedUris = mutableListOf<Uri>()
