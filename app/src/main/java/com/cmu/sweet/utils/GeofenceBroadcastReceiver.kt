@@ -26,8 +26,8 @@ class GeofenceBroadcastReceiver : BroadcastReceiver() {
                 if (hour in 16..19) {
                     NotificationHelper.notifyUser(
                         context,
-                        "Restaurante próximo!",
-                        "Você está a menos de 50 metros de um restaurante."
+                        "Café próximo!",
+                        "Você está a menos de 50 metros de um café."
                     )
                 }
             }

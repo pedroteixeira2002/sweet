@@ -4,8 +4,8 @@ import android.Manifest
 import android.app.PendingIntent
 import android.content.Context
 import android.content.Intent
+import android.location.Location
 import androidx.annotation.RequiresPermission
-import com.google.android.gms.location.FusedLocationProviderClient
 import com.google.android.gms.location.Geofence
 import com.google.android.gms.location.GeofencingClient
 import com.google.android.gms.location.GeofencingRequest
@@ -14,7 +14,6 @@ import com.google.android.libraries.places.api.Places
 import com.google.android.libraries.places.api.net.FetchPlaceRequest
 import com.google.android.libraries.places.api.net.FindAutocompletePredictionsRequest
 import com.google.android.libraries.places.api.model.Place
-import com.google.android.gms.maps.model.LatLng
 import kotlinx.coroutines.tasks.await
 import timber.log.Timber
 import kotlin.math.*
@@ -68,7 +67,7 @@ fun distanceInMeters(
     lat2: Double, lon2: Double
 ): Float {
     val results = FloatArray(1)
-    android.location.Location.distanceBetween(lat1, lon1, lat2, lon2, results)
+    Location.distanceBetween(lat1, lon1, lat2, lon2, results)
     return results[0]
 }
 

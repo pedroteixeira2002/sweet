@@ -130,7 +130,6 @@ fun HomeSectionContent(
         modifier = modifier.fillMaxSize()
     ) { innerPadding ->
 
-        // Box para o mapa full screen, ignorando innerPadding do BottomSheet
         Box(modifier = Modifier.fillMaxSize()) {
             GoogleMap(
                 modifier = Modifier.fillMaxSize(),
@@ -148,7 +147,6 @@ fun HomeSectionContent(
                     end = 16.dp
                 )
             ) {
-                // Centraliza câmera na localização do usuário
                 uiState.userLocation.let { location ->
                     LaunchedEffect(location) {
                         cameraPositionState.animate(
@@ -158,7 +156,6 @@ fun HomeSectionContent(
                     }
                 }
 
-                // Adiciona marcadores para os estabelecimentos
                 uiState.establishments.forEach { est ->
                     Marker(
                         state = rememberUpdatedMarkerState(position = est.location),
@@ -169,7 +166,6 @@ fun HomeSectionContent(
                 }
             }
 
-            // Barra de pesquisa sobre o mapa
             AddressSearchBar(
                 searchText = searchQuery,
                 onSearchTextChange = { query ->
@@ -195,12 +191,10 @@ fun HomeSectionContent(
                 }
             )
 
-            // Indicador de loading de localização
             if (uiState.isLoadingLocation) {
                 CircularProgressIndicator(Modifier.align(Alignment.Center))
             }
 
-            // Snackbar de erros de localização
             uiState.locationError?.let { error ->
                 Snackbar(
                     modifier = Modifier

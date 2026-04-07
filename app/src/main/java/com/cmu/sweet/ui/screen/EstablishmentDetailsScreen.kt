@@ -142,7 +142,7 @@ fun PhotosSection(photos: List<String>, establishmentName: String) {
         LazyRow(
             modifier = Modifier
                 .fillMaxWidth()
-                .height(200.dp), // Altura fixa para o carrossel de fotos
+                .height(200.dp),
             horizontalArrangement = Arrangement.spacedBy(8.dp),
             contentPadding = PaddingValues(horizontal = 16.dp, vertical = 8.dp)
         ) {
@@ -152,8 +152,8 @@ fun PhotosSection(photos: List<String>, establishmentName: String) {
                         .data(photoUrl)
                         .crossfade(true)
                         .build(),
-                    placeholder = painterResource(R.drawable.ic_launcher_background), // Substitua por um placeholder seu
-                    error = painterResource(R.drawable.ic_launcher_background), // Substitua por um placeholder de erro
+                    placeholder = painterResource(R.drawable.ic_launcher_background),
+                    error = painterResource(R.drawable.ic_launcher_background),
                     contentDescription = "Foto de $establishmentName",
                     contentScale = ContentScale.Crop,
                     modifier = Modifier
@@ -184,7 +184,6 @@ fun PhotosSection(photos: List<String>, establishmentName: String) {
 fun InfoSection(establishment: EstablishmentDetails, viewModel: EstablishmentDetailsViewModel) {
     var averageRating by remember { mutableStateOf<Float?>(null) }
 
-    // Calculate the average rating asynchronously
     LaunchedEffect(establishment.id) {
         averageRating = viewModel.getAverageRating()
     }

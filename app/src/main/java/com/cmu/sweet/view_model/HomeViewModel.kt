@@ -53,9 +53,6 @@ class HomeViewModel(application: Application) : AndroidViewModel(application) {
 
         if (permissionGranted) {
             _uiState.update { it.copy(locationPermissionState = LocationPermissionState.GRANTED) }
-            // Não chamar fetchUserLocation() aqui diretamente.
-            // A UI (HomeScreen/HomeSectionContent) verificará mapLoaded e locationPermissionState
-            // e então chamará fetchUserLocation ou o ViewModel o fará em onMapLoaded.
         } else {
             _uiState.update { it.copy(locationPermissionState = LocationPermissionState.INITIAL) }
         }
@@ -76,12 +73,6 @@ class HomeViewModel(application: Application) : AndroidViewModel(application) {
                 fetchUserLocation()
             }
         } else {
-            // A função shouldShowRationaleProvider() deve ser chamada pela UI ANTES de pedir a permissão
-            // pela segunda vez. Se ela retorna true, mostramos o rationale.
-            // Se retorna false APÓS uma negação, pode ser uma negação permanente.
-            // O ActivityResultContracts.RequestPermission não nos dá diretamente o "não perguntar novamente".
-            // A lógica de shouldShowRationaleProvider é mais útil para a UI decidir se mostra o rationale
-            // antes de pedir novamente.
             if (shouldShowRationaleProvider()) {
                 _uiState.update {
                     it.copy(
@@ -90,21 +81,7 @@ class HomeViewModel(application: Application) : AndroidViewModel(application) {
                     )
                 }
             } else {
-                // Se não precisa de rationale, pode ser a primeira negação (sem marcar "não perguntar")
-                // ou uma negação permanente. A UI, ao tentar pedir novamente e shouldShowRationaleProvider ainda
-                // retornar false, pode inferir negação permanente.
-                // Por agora, o requestLocationPermissionAgain tratará a lógica de PERMANENTLY_DENIED.
                 _uiState.update { it.copy(locationPermissionState = LocationPermissionState.DENIED) }
-                // Vamos acionar a verificação para o diálogo de negação permanente aqui,
-                // já que o usuário acabou de negar e não quer ver o rationale.
-                // Isso é uma simplificação; uma detecção mais robusta de "don't ask again" é complexa.
-                // Se a UI tentar pedir novamente e shouldShowRationale ainda for false, aí sim é mais certo.
-                // Vamos assumir que se o rationale não é necessário após uma negação, mostramos o diálogo de permanente.
-                // Esta lógica pode precisar de ajuste fino baseado no comportamento exato desejado.
-                // Uma maneira mais simples: se negado e shouldShowRationaleProvider() é false,
-                // pode ser que o usuário nunca tenha sido perguntado antes OU negou permanentemente.
-                // O estado DENIED é um bom fallback. A UI pode tentar chamar requestLocationPermissionAgain()
-                // e essa função verificará o estado.
             }
         }
     }
@@ -265,8 +242,8 @@ class HomeViewModel(application: Application) : AndroidViewModel(application) {
                         addedBy = establishment.addedBy
                     )
                 }
-                    .filter { it.distance!! <= radiusMeters } // filter by radius
-                    .sortedBy { it.distance } // sort closest first
+                    .filter { it.distance!! <= radiusMeters }
+                    .sortedBy { it.distance }
 
                 Timber.d("After filtering: ${uiModels.size} establishments within ${radiusMeters}m")
 
