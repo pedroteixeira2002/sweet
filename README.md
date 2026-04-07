@@ -1,95 +1,320 @@
-# Relatório do Projeto - Sweet
+# Sweet 🍯
 
-## 1. Contexto do Tema
+A location-based Android application for discovering and reviewing local establishments. Built with modern Android development practices using Kotlin and Jetpack Compose.
 
-O projeto **Sweet** consiste numa aplicação Android desenvolvida em Kotlin, focada na localização e avaliação de estabelecimentos (como pastelarias, cafés, etc). O objetivo é permitir que utilizadores visualizem, avaliem e explorem estabelecimentos próximos, facilitando a tomada de decisão sobre onde ir. O contexto surge da necessidade de tornar a experiência de descoberta local mais interativa, personalizada e social, aliando funcionalidades de mapa, reviews e leaderboards.
+## 📱 Project Overview
 
-## 2. Funcionalidades Implementadas
+Sweet is a comprehensive mobile application that enables users to discover, review, and share local establishments in their area. The app leverages location services to provide a personalized experience, allowing users to find nearby restaurants, cafes, and other businesses, leave reviews, and compete with other users through a leaderboard system.
 
-- **Localização do Utilizador e Mapa Interativo:** A app utiliza o Google Maps para mostrar a localização do utilizador e dos estabelecimentos próximos. O mapa centraliza na posição do utilizador e adiciona marcadores para cada estabelecimento, permitindo visualizar detalhes ao clicar.
-- **Barra de Pesquisa de Endereço:** Permite encontrar estabelecimentos por endereço, com sugestões dinâmicas (Google Places API).
-- **Listagem de Estabelecimentos:** Os estabelecimentos próximos são apresentados numa lista (LazyColumn), com cards clicáveis para abrir detalhes.
-- **Detalhes do Estabelecimento:** Tela com informações detalhadas, fotos (via Coil), avaliações e reviews.
-- **Sistema de Avaliações:** Utilizadores autenticados podem adicionar reviews aos estabelecimentos, incluindo fotos, comentário avaliação e faixa de preço.
-- **Leaderboard:** Ranking dos estabelecimentos com melhores avaliações.
-- **Gestão de Permissões:** Diálogos informativos para permissões de localização (rationale e negação permanente).
-- **Notificações e Geofences:** Notificações baseadas em eventos de localização, usando Geofences para alertar quando o utilizador está perto de estabelecimentos.
-- **Perfil de Utilizador:** Área do utilizador para ver e editar perfil, ver as suas avaliações e estabelecimentos adicionados.
-- **Configurações:** Suporte a dark mode e escolha de idioma.
+### Key Features
 
-## 3. Componentes Android Utilizados
+- **📍 Location-Based Discovery**: Automatically discover establishments near your location
+- **⭐ Review System**: Rate and review establishments with both quality and price ratings
+- **🏆 Leaderboard**: Compete with other users based on review contributions
+- **🔔 Geofencing**: Receive notifications when near reviewed establishments
+- **👤 User Profiles**: Manage personal profiles and view review history
+- **🌙 Dark Mode**: Toggle between light and dark themes
+- **🌍 Multi-Language**: Support for English and Portuguese
+- **🗺️ Interactive Maps**: Visual representation of establishments using Google Maps
 
-- **Activities e Fragments:** `MainActivity` faz a gestão principal, delegando para composables e view models as várias telas.
-- **Jetpack Compose:** Utilizado para toda a interface, com componentes como `BottomSheetScaffold`, `LazyColumn`, `AlertDialog`, `Slider`, etc.
-- **ViewModel:** Separação da lógica de negócio e dados da UI (`HomeViewModel`, `ProfileViewModel`, `AuthViewModel`, etc).
-- **LiveData/StateFlow:** Estado reativo para atualização da UI conforme dados mudam.
-- **Google Maps e Places API:** Para mapas, marcadores, procura de endereços e sugestões.
-- **Room Database:** Para persistência local dos dados de estabelecimentos, reviews e utilizadores (ver `SweetDatabase.kt`).
-- **Geofences:** Utilização do `GeofencingClient` e broadcast receivers para eventos de proximidade.
-- **Navigation Component (Compose):** Implementação de navegação entre telas/flows.
-- **Material3:** Para visual e temas, com cores e tipografia custom.
+## 🛠️ Technology Stack
 
-## 4. Bibliotecas Externas Utilizadas
+### Core Technologies
+- **Language**: Kotlin
+- **UI Framework**: Jetpack Compose
+- **Architecture**: MVVM (Model-View-ViewModel)
+- **Database**: Room (Local) + Firebase Firestore (Remote)
+- **Authentication**: Firebase Auth
+- **Cloud Storage**: Firebase Storage
+- **Analytics**: Firebase Analytics
 
-Analisando imports e inicializações:
-- **Google Maps Compose:** Para integração de mapas na UI.
-- **Google Places API:** Sugestões de endereço e conversão de texto para coordenadas.
-- **Firebase (Firestore, Auth, Storage):** Autenticação, persistência e sincronização de dados, além de upload de fotos de reviews.
-- **Room:** Persistência local de dados.
-- **Coil:** Carregamento eficiente de imagens nas telas de detalhes.
-- **Timber:** Logging estruturado durante o desenvolvimento e debug.
-- **Kotlin Coroutines:** Programação assíncrona, coleta de dados e atualização de estado.
-- **Material3:** UI moderna e responsiva.
-- **DataStore:** Persistência de configurações como idioma e dark mode.
+### Major Dependencies
 
-## 5. Funcionamento da Aplicação
+#### Android & Compose
+- `androidx.core:core-ktx` (1.17.0) - Core Android KTX extensions
+- `androidx.lifecycle:lifecycle-runtime-ktx` (2.9.3) - Lifecycle aware components
+- `androidx.activity:activity-compose` (1.10.1) - Activity Compose integration
+- `androidx.compose:compose-bom` (2025.08.01) - Compose Bill of Materials
+- `androidx.compose.material3:material3` (1.3.2) - Material Design 3 components
+- `androidx.compose.material:material-icons-extended` (1.7.8) - Extended material icons
 
-### Fluxo principal:
-1. **Startup:** Ao abrir, solicita permissões de localização. Se concedidas, inicializa o mapa e centraliza na posição do utilizador.
-2. **Map e Listagem:** Mostra estabelecimentos próximos no mapa (marcadores) e em lista. O raio de procura pode ser ajustado.
-3. **Pesquisa:** Barra de pesquisa permite filtrar estabelecimentos por endereço.
-4. **Detalhes:** Ao clicar num card ou marcador, abre a tela de detalhes com fotos, reviews, info e opção de avaliar.
-5. **Avaliação:** Utilizador pode adicionar review, comentário e foto. Só permitido se estiver autenticado e próximo ao local.
-6. **Leaderboard:** Estabelecimentos são ranked por média de avaliações.
-7. **Geofences:** Notificações quando o utilizador entra na proximidade de um estabelecimento.
-8. **Perfil:** Utilizador pode ver/editar perfil, ver as suas avaliações e estabelecimentos que registou.
-9. **Configurações:** Alterar idioma e tema.
+#### Navigation & Architecture
+- `androidx.navigation:navigation-compose` (2.9.3) - Compose navigation
+- `androidx.room:room-runtime` (2.7.2) - Local database
+- `androidx.room:room-ktx` (2.7.2) - Room Kotlin extensions
+- `androidx.datastore:datastore-preferences` (1.1.1) - Preferences storage
 
-### Fluxos alternativos:
-- Diálogos de permissão aparecem quando necessário.
-- Tratamento de erros (ex: localização não obtida, permissões negadas).
+#### Firebase Services
+- `com.google.firebase:firebase-bom` (34.2.0) - Firebase Bill of Materials
+- `com.google.firebase:firebase-auth` - User authentication
+- `com.google.firebase:firebase-firestore` - Cloud database
+- `com.google.firebase:firebase-storage` - File storage
+- `com.google.firebase:firebase-analytics` - Usage analytics
 
-## 6. Decisões de Implementação
+#### Location & Maps
+- `com.google.android.gms:play-services-location` (21.3.0) - Location services
+- `com.google.android.gms:play-services-maps` (19.2.0) - Google Maps
+- `com.google.maps.android:maps-compose` (6.7.2) - Maps Compose integration
+- `com.google.android.libraries.places:places` (4.4.1) - Places API
 
-- **Kotlin + Jetpack Compose:**
-- **Arquitetura MVVM:** 
-- **Persistência híbrida (Room + Firestore):** 
-- **Google APIs para localização e mapas:** 
-- **Firebase Auth para login:** 
-- **Uso extensivo de coroutines:**
-- **Material3:** 
-- **Design centrado no utilizador:** 
+#### Utilities
+- `com.jakewharton.timber:timber` (5.0.1) - Logging
+- `io.coil-kt:coil-compose` (2.7.0) - Image loading
 
-## 7. Resultados Obtidos
+#### Testing
+- `junit:junit` (4.13.2) - Unit testing
+- `androidx.test.ext:junit` (1.3.0) - Android testing extensions
+- `androidx.test.espresso:espresso-core` (3.7.0) - UI testing
 
-- **Funcionamento fluido:** A interface responde rapidamente às ações do utilizador.
-- **Mapas interativos e precisos:** Centralização na localização, filtragem por raio, procura por endereço.
-- **Avaliações e reviews:** Utilizadores podem contribuir ativamente para a comunidade.
-- **Notificações úteis:** Alertas de proximidade, informações relevantes.
-- **Perfil e leaderboard:** Incentivo à participação via rankings e personalização.
+## 🏗️ Project Architecture
 
-## 8. Conclusões
+### Package Structure
+```
+com.cmu.sweet/
+├── data/                   # Data layer
+│   ├── local/             # Local database (Room)
+│   │   ├── dao/           # Data Access Objects
+│   │   ├── entities/      # Database entities
+│   │   └── relations/     # Entity relationships
+│   ├── remote/            # Remote data sources
+│   │   └── dto/           # Data Transfer Objects
+│   ├── mappers/           # Data mappers
+│   └── repository/        # Repository implementations
+├── helpers/               # Utility classes and helpers
+├── ui/                    # User Interface layer
+│   ├── components/        # Reusable UI components
+│   ├── navigation/        # Navigation configuration
+│   ├── screen/           # Screen composables
+│   ├── state/            # UI state classes
+│   └── theme/            # App theming
+├── utils/                # Utility functions
+├── view_model/           # ViewModels (MVVM)
+├── MainActivity.kt       # Main activity
+└── SweetApplication.kt   # Application class
+```
 
-A aplicação **Sweet** demonstra um uso avançado das tecnologias Android, proporcionando uma experiência rica e interativa para descoberta e avaliação de estabelecimentos locais. O uso de arquitetura MVVM, integração com APIs modernas e bibliotecas robustas garante escalabilidade e facilidade de manutenção. As decisões de design e implementação refletem boas práticas aprendidas nas aulas, colocando o utilizador no centro da experiência.
+### Data Models
 
-**Pontos fortes:**  
-- Integração completa com localização, mapas e reviews.
-- UI fluida e moderna.
-- Suporte offline e sincronização.
-- Gamificação via leaderboard.
+#### Core Entities
 
-**Pontos a melhorar:**  
-- Expandir tipos de estabelecimentos, filtros avançados.
-- Notificações contextuais mais inteligentes.
-- Melhorar onboarding e tutorial inicial.
-- Terminar suporte à multilinguagem 
+**Establishment**
+- Primary entity representing local businesses
+- Fields: id, name, address, type, description, latitude, longitude, addedBy, createdAt
+- Supports foreign key relationships with User entity
+
+**Review**
+- User-generated reviews for establishments
+- Fields: id, establishmentId, userId, rating, priceRating, comment, timestamp
+- Links establishments with users through foreign keys
+
+**User**
+- User profile information
+- Manages authentication and user-specific data
+
+### Architecture Patterns
+
+- **MVVM**: Clean separation between UI and business logic
+- **Repository Pattern**: Centralized data access management
+- **Dependency Injection**: Manual DI implementation
+- **Single Source of Truth**: Room database with Firebase sync
+
+## 🚀 Installation & Setup
+
+### Prerequisites
+- Android Studio (latest version recommended)
+- Android SDK (API level 26 or higher)
+- Java 17
+- Firebase project setup
+
+### Configuration Steps
+
+1. **Clone the Repository**
+   ```bash
+   git clone https://github.com/pedroteixeira2002/sweet.git
+   cd sweet
+   ```
+
+2. **Firebase Setup**
+   - Create a new Firebase project at [Firebase Console](https://console.firebase.google.com/)
+   - Enable Authentication, Firestore Database, and Storage
+   - Download `google-services.json` and place it in the `app/` directory
+   - Replace the API key in `AndroidManifest.xml` with your Google Maps API key
+
+3. **Google Maps Setup**
+   - Enable Maps SDK for Android in Google Cloud Console
+   - Enable Places API
+   - Update the API key in `AndroidManifest.xml`:
+     ```xml
+     <meta-data
+         android:name="com.google.android.geo.API_KEY"
+         android:value="YOUR_API_KEY_HERE" />
+     ```
+
+4. **Build Configuration**
+   ```bash
+   chmod +x gradlew
+   ./gradlew clean build
+   ```
+
+### Required Permissions
+The app requires the following permissions:
+- `ACCESS_FINE_LOCATION` - Precise location access
+- `ACCESS_BACKGROUND_LOCATION` - Background location access
+- `FOREGROUND_SERVICE` - Location service operation
+- `POST_NOTIFICATIONS` - Push notifications
+- `READ_EXTERNAL_STORAGE` / `READ_MEDIA_*` - Media access
+
+## 🎯 Core Features
+
+### 1. User Authentication
+- Firebase Authentication integration
+- Email/password login and registration
+- Secure user session management
+
+### 2. Location Services
+- Real-time location tracking
+- Geofencing for proximity notifications
+- Background location service
+- Location-based establishment discovery
+
+### 3. Establishment Management
+- Add new establishments with location data
+- View detailed establishment information
+- Search and filter establishments
+- Category-based organization
+
+### 4. Review System
+- 5-star rating system for quality
+- 5-star rating system for price
+- Text-based reviews
+- User review history
+
+### 5. Interactive Maps
+- Google Maps integration
+- Custom map styling (light/dark modes)
+- Establishment markers
+- Current location indicator
+
+### 6. Social Features
+- User leaderboards
+- Profile management
+- Review statistics
+
+### 7. Personalization
+- Dark/light theme toggle
+- Multi-language support (English/Portuguese)
+- Persistent user preferences
+
+## 📱 User Interface
+
+### Screen Flow
+1. **Splash Screen** → Initial app loading
+2. **Welcome Screen** → First-time user introduction
+3. **Login/Signup** → User authentication
+4. **Home Screen** → Main dashboard with nearby establishments
+5. **Profile Screen** → User information and settings
+6. **Add Establishment** → Create new establishment entries
+7. **Add Review** → Rate and review establishments
+8. **Leaderboard** → User rankings and statistics
+9. **Settings** → App preferences and configuration
+
+### Design System
+- **Material Design 3** components and theming
+- **Responsive layouts** for different screen sizes
+- **Accessibility support** with proper content descriptions
+- **Consistent navigation** patterns throughout the app
+
+## 🔧 Development Workflow
+
+### Build System
+- **Gradle** with Kotlin DSL
+- **Version Catalogs** for dependency management
+- **ProGuard** configuration for release builds
+
+### Code Quality
+- **Timber** for structured logging
+- **Lint** checks for code quality
+- **Type-safe navigation** with Compose Navigation
+
+### Testing Strategy
+- **Unit tests** with JUnit
+- **Instrumented tests** with Espresso
+- **Compose UI tests** for screen validation
+
+## 🔐 Security & Privacy
+
+### Data Protection
+- User authentication through Firebase Auth
+- Secure API key management
+- Local data encryption with Room
+- Privacy-compliant location data handling
+
+### Permissions
+- Runtime permission requests
+- Granular location access control
+- User consent for data collection
+
+## 🌐 API Integration
+
+### Google Services
+- **Maps API**: Interactive map display and location services
+- **Places API**: Establishment search and autocomplete
+- **Location Services**: GPS and network-based positioning
+
+### Firebase Services
+- **Authentication**: User management and security
+- **Firestore**: Real-time database synchronization
+- **Storage**: Image and file management
+- **Analytics**: Usage tracking and insights
+
+## 📈 Performance Optimizations
+
+### Location Services
+- Intelligent geofence management (100 nearest establishments)
+- Battery-efficient location updates
+- Background service optimization
+
+### Database
+- Room database with foreign key constraints
+- Efficient query optimization
+- Proper indexing for performance
+
+### UI Performance
+- Compose performance best practices
+- Lazy loading for large datasets
+- Efficient state management
+
+## 🤝 Contributing
+
+### Development Guidelines
+1. Follow Kotlin coding conventions
+2. Use meaningful commit messages
+3. Write unit tests for new features
+4. Update documentation for API changes
+5. Respect the established architecture patterns
+
+### Pull Request Process
+1. Fork the repository
+2. Create a feature branch
+3. Make your changes with proper testing
+4. Submit a pull request with detailed description
+
+## 📄 License
+
+This project is licensed under the MIT License. See the [LICENSE](LICENSE) file for details.
+
+## 👥 Team
+
+- **Author**: pedroteixeira2002
+- **Institution**: Carnegie Mellon University (CMU)
+
+## 📞 Support
+
+For questions, issues, or contributions, please:
+1. Check existing GitHub issues
+2. Create a new issue with detailed description
+3. Contact the development team
+
+---
+
+**Note**: This project is part of academic work at Carnegie Mellon University. Please ensure proper attribution when using or referencing this code.
